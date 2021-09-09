@@ -1,0 +1,107 @@
+#!/usr/bin/python3
+
+'''
+The main thing I wanted to demonstrate here is to add some logic
+controlled in the database via a 'TRIGGER'.
+
+I typically use PostGreSQL for database backends and feel much more
+confortable with it than SQLite. I am choosing SQLite because it is
+included in standard library for Python.
+
+I have included a more advanced PostGreSQL/PostGIS script template
+demonstrating some more advanced SQL.
+
+    - ./examples/osm_road_snapper.tmpl.sql
+
+Here are some other SQL examples on my github:
+
+    - https://github.com/sjsafranek/find5/blob/c8d5bbbcfb4b33f420a83f07025bad9727474ce3/findapi/lib/database/user.go#L360
+    - https://github.com/sjsafranek/find5/blob/c8d5bbbcfb4b33f420a83f07025bad9727474ce3/finddb_schema/base_schema/create_users_table.sql#L2
+'''
+
+import uuid
+import random
+import os.path
+import sqlite3
+
+from conf import DB_FILE
+
+
+# Check for database file
+# Doing this before the running sqlite3.connect
+# to avoid any changes on the file system.
+_dbExists = os.path.exists(DB_FILE)
+
+# Open database connection
+conn = sqlite3.connect(DB_FILE)
+
+# Enable dict factory for sqlite3.
+# I would typically use the PostGreSQL JSON functionality.
+def dict_factory(cursor, row):
+    d = {}
+    for idx, col in enumerate(cursor.description):
+        d[col[0]] = row[idx]
+    return d
+
+conn.row_factory = dict_factory
+
+# Set journal mode to WAL.
+# source: https://charlesleifer.com/blog/going-fast-with-sqlite-and-python/
+# https://sqlite.org/wal.html
+# This isn't really needed for this project, but it is
+# helpful for high concurrency applications.
+conn.execute('pragma journal_mode=wal')
+
+
+#
+def init_db():
+
+    # Get cursor
+    cursor = conn.cursor()
+
+    # Create tables
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS models (
+            name            TEXT PRIMARY KEY,
+            make            TEXT,
+            color           TEXT,
+            status          TEXT,
+            create_at       DATETIME DEFAULT CURRENT_TIMESTAMP,
+            update_at       DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+    ''')
+
+    cursor.execute('''
+        CREATE TRIGGER IF NOT EXISTS on_models_update
+           AFTER UPDATE OF make, color, status ON models
+        BEGIN
+            UPDATE models SET update_at = CURRENT_TIMESTAMP WHERE name = NEW.name;
+        END;
+    ''')
+
+    # Commit changes
+    conn.commit()
+
+
+def load_dummy_data():
+
+    # Get cursor
+    cursor = conn.cursor()
+    make_options = ['ford', 'subaru', 'toyota']
+    color_options = ['blue', 'red', 'silver', 'green', 'white', 'black']
+    status_options = ['driving', 'crashed', 'parked']
+
+    for i in range(37):
+        make = random.choice(make_options)
+        color = random.choice(color_options)
+        status = random.choice(status_options)
+        cursor.execute('''INSERT INTO models (name, make, color, status) VALUES (?, ?, ?, ?)''', ( str(uuid.uuid4()), make, color, status, ) )
+
+    # Commit database changes
+    conn.commit()
+
+
+# Initialize database if it does not yet exist
+if not _dbExists:
+    init_db()
+    load_dummy_data()
