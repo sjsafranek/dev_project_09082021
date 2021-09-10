@@ -19,7 +19,6 @@ it out using the following operating systems and versions:
 | Python   | 3.7.3     | 3.9.7      |
 
 Instead of doing a "simple" website I added some dynamic UI components with Vue and D3.
-I took some liberties
 
 
 ## Usage
