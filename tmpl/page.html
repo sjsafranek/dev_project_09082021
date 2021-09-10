@@ -711,6 +711,7 @@
                                 focusConfirm: false,
                                 backdrop: true,
                                 showLoaderOnConfirm: true,
+                                allowOutsideClick: function(){ return !Swal.isLoading(); },
                                 // Here is a nice example of a Promise chain
                                 preConfirm: function() {
                                     return fetch('/api/v1/model/' + model.name, {
