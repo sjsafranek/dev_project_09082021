@@ -92,6 +92,7 @@
                 <div class="col-1">status</div>
                 <div class="col-2">create_at</div>
                 <div class="col-2">update_at</div>
+                <div class="col-1"></div>
             </div>
 
             <!-- Filters -->
@@ -114,6 +115,7 @@
                 <div class="col-2">
                     <input type="text" class="form-control form-control-sm" placeholder="update_at" v-model="filters.update_at" @change="filterChange()">
                 </div>
+                <div class="col-1"></div>
             </div>
 
             <!-- Body -->
@@ -187,6 +189,9 @@
                         // It would be nicer to use websockets for stuff like this.
                         fetch('/api/v1/model/' + model.name, {
                             method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
                             body: JSON.stringify({"method":"update_model","params":model})
                         }).then(function(response) {
                             response.json().then(function(data) {
@@ -217,6 +222,7 @@
                         }).then(function(result) {
                             if (result.isConfirmed) {
                                 fetch('/api/v1/model/' + model.name, {
+                                // fetch('/model/' + model.name, {
                                     method: 'DELETE'
                                 }).then(function(response) {
                                     response.json().then(function(data) {

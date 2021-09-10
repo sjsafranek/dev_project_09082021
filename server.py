@@ -164,17 +164,17 @@ class Controller(BaseHTTPRequestHandler):
                 return self.sendAPIResponse(model=model.toDict())
 
         # The next two endpoints will interface with the "View" component
-        elif url.path in ['/', '/models']:
+        elif '/' == url.path:
             view = ModelsView(ModelCollection(Model.fetch(**self.params)))
             page = view.render()
             return self.sendHTML(page)
 
-        elif re.match(r'^/model/[^/]+$', url.path):
-            model = self.getModel()
-            if model:
-                view = ModelsView(ModelCollection([model]))
-                page = view.render()
-                return self.sendHTML(page)
+        # elif re.match(r'^/model/[^/]+$', url.path):
+        #     model = self.getModel()
+        #     if model:
+        #         view = ModelsView(ModelCollection([model]))
+        #         page = view.render()
+        #         return self.sendHTML(page)
 
         self.errorNotFound()
 
@@ -188,25 +188,20 @@ class Controller(BaseHTTPRequestHandler):
 
         url = urlparse(self.path)
 
-        # Api endpoints
-        if '/api/v1/model' == url.path:
+        if url.path in ['/api/v1/model', '/create']:
+            # Create new model if one does not exist by that 'name'.
             name = self.params.get('name')
             if name:
                 if Model.exists(name):
                     return self.errorMethodBadRequest('Model already exists')
             model = Model(name=name)
             model.save()
-            return self.sendAPIResponse(model=model.toDict())
 
-        # Form endpoints
-        elif '/create' == url.path:
-            name = self.params.get('name')
-            if name:
-                if Model.exists(name):
-                    return self.errorMethodBadRequest('Model already exists')
-            model = Model(name=name)
-            model.save()
-            return self.redirect('/')
+            # Depending on endpoint return api response or redirect.
+            if '/api/v1/model' == url.path:
+                return self.sendAPIResponse(model=model.toDict())
+            else:
+                return self.redirect('/')
 
         self.errorNotFound()
 
@@ -223,6 +218,17 @@ class Controller(BaseHTTPRequestHandler):
                 model.save()
                 return self.sendAPIResponse(model=model.toDict())
 
+        elif re.match(r'^/model/[^/]+$', url.path):
+            print(self.getModel())
+        # elif '/update' == url.path:
+        #     model = self.getModel()
+        #     if model:
+        #         model.color = params.get('color', model.color)
+        #         model.make = params.get('make', model.make)
+        #         model.status = params.get('status', model.status)
+        #         model.save()
+        #         return self.redirect('/')
+
         self.errorNotFound()
 
     def do_DELETE(self):
@@ -232,6 +238,16 @@ class Controller(BaseHTTPRequestHandler):
             if model:
                 model.delete()
                 return self.sendAPIResponse()
+
+        elif re.match(r'^/model/[^/]+$', url.path):
+            print(self.getModel())
+
+        # if '/delete' == url.path:
+        #     model = self.getModel()
+        #     if model:
+        #         model.delete()
+        #         return self.redirect('/')
+
         self.errorNotFound()
 
 
