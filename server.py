@@ -140,13 +140,21 @@ class Controller(BaseHTTPRequestHandler):
         models = Model.fetch(name=name)
         return models[0] if len(models) else None
 
+    def indexHandler(self):
+        view = ModelsView(ModelCollection(Model.fetch(**self.params)))
+        page = view.render()
+        return self.sendHTML(page)
+
     def do_HEAD(self):
         return
 
     def do_GET(self):
         url = urlparse(self.path)
 
-        if '/ping' == url.path:
+        if '/' == url.path:
+            return self.indexHandler()
+
+        elif '/ping' == url.path:
             return self.sendAPIResponse(
                             version=VERSION,
                             start_time=START_TIME,
@@ -162,12 +170,6 @@ class Controller(BaseHTTPRequestHandler):
             model = self.getModel()
             if model:
                 return self.sendAPIResponse(model=model.toDict())
-
-        # The next two endpoints will interface with the "View" component
-        elif '/' == url.path:
-            view = ModelsView(ModelCollection(Model.fetch(**self.params)))
-            page = view.render()
-            return self.sendHTML(page)
 
         # elif re.match(r'^/model/[^/]+$', url.path):
         #     model = self.getModel()
@@ -188,7 +190,10 @@ class Controller(BaseHTTPRequestHandler):
 
         url = urlparse(self.path)
 
-        if url.path in ['/api/v1/model', '/create']:
+        if '/' == url.path:
+            return self.indexHandler()
+
+        elif url.path in ['/api/v1/model', '/create']:
             # Create new model if one does not exist by that 'name'.
             name = self.params.get('name')
             if name:
@@ -207,7 +212,11 @@ class Controller(BaseHTTPRequestHandler):
 
     def do_PUT(self):
         url = urlparse(self.path)
-        if re.match(r'^/api/v1/model/[^/]+$', url.path):
+
+        if '/' == url.path:
+            return self.indexHandler()
+
+        elif re.match(r'^/api/v1/model/[^/]+$', url.path):
             model = self.getModel()
             if model:
                 # Update model with new values. Default to existing value.
@@ -233,20 +242,18 @@ class Controller(BaseHTTPRequestHandler):
 
     def do_DELETE(self):
         url = urlparse(self.path)
-        if url.path.startswith('/api/v1/model/'):
+
+        if '/' == url.path:
+            return self.indexHandler()
+
+        elif url.path.startswith('/api/v1/model/') or re.match(r'^/model/[^/]+$', url.path):
             model = self.getModel()
             if model:
                 model.delete()
-                return self.sendAPIResponse()
-
-        elif re.match(r'^/model/[^/]+$', url.path):
-            print(self.getModel())
-
-        # if '/delete' == url.path:
-        #     model = self.getModel()
-        #     if model:
-        #         model.delete()
-        #         return self.redirect('/')
+                if url.path.startswith('/api/v1/model/'):
+                    return self.sendAPIResponse()
+                else:
+                    return self.redirect('/')
 
         self.errorNotFound()
 
