@@ -18,7 +18,11 @@ it out using the following operating systems and versions:
 | pysqlite | 2.6.0     | 2.6.0      |
 | Python   | 3.7.3     | 3.9.7      |
 
-Instead of doing a "simple" website I added some dynamic UI components with Vue and D3.
+Instead of doing a "simple" website I opted for a more dynamic UI using with Vue and D3.
+
+I included comments throughout the code detailing some of my though process as I went
+through the exercise. I apologize in advance for any spell mistakes and I thank you for
+your consideration.
 
 
 ## Usage
