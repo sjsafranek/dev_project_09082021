@@ -17,7 +17,8 @@ from http.server import HTTPServer
 from http.server import BaseHTTPRequestHandler
 from socketserver import ThreadingMixIn
 # from socketserver import ForkingMixIn     # This does not work on windows
-# import asyncio        # I haven't used this enough. If I have time I might try to utilize it.
+# import asyncio        # I haven't used this enough. If I have time I
+# might try to utilize it.
 
 from models import Model
 
@@ -25,7 +26,6 @@ from models import Model
 VERSION = '0.0.1'
 
 START_TIME = time.time()
-
 
 
 # Basic server for handling requests
@@ -60,19 +60,25 @@ class Controller(BaseHTTPRequestHandler):
     # The next few methods are just helpers to keep things clean
     # within our application logic.
     def sendJSON(self, payload, status=200):
-        self.send(json.dumps(payload), content_type='application/json', status=status)
+        self.send(
+            json.dumps(payload),
+            content_type='application/json',
+            status=status)
 
     def sendHTML(self, content, status=200):
         self.send(content, content_type='text/html', status=status)
 
     def errorNotFound(self, message='Not Found'):
-        self.sendJSON({"status":"error", "error": {"message": message}}, status=404)
+        self.sendJSON({"status": "error", "error": {
+                      "message": message}}, status=404)
 
     def errorMethodNotAllowed(self, message='Method Not Allowed'):
-        self.sendJSON({"status":"error", "error": {"message": message}}, status=405)
+        self.sendJSON({"status": "error", "error": {
+                      "message": message}}, status=405)
 
     def errorMethodBadRequest(self, message='Bad Request'):
-        self.sendJSON({"status":"error", "error": {"message": message}}, status=400)
+        self.sendJSON({"status": "error", "error": {
+                      "message": message}}, status=400)
 
     def sendAPIResponse(self, **kwargs):
         return self.sendJSON({
@@ -103,19 +109,20 @@ class Controller(BaseHTTPRequestHandler):
             if self.body:
                 try:
                     return json.loads(self.body)
-                except:
+                except BaseException:
                     return {}
         return {}
 
     @property
     def form(self):
         ''' Parses forms contained in the request body '''
-        if 'application/x-www-form-urlencoded' == self.headers.get('content-type'):
+        if 'application/x-www-form-urlencoded' == self.headers.get(
+                'content-type'):
             if self.body:
                 params = parse_qs(self.body)
                 return {
-                    k.decode(): v[0].decode() for k, v in params.items() if v is not None
-                }
+                    k.decode(): v[0].decode() for k,
+                    v in params.items() if v is not None}
         return {}
 
     @property
@@ -167,6 +174,11 @@ class Controller(BaseHTTPRequestHandler):
 
             This technically our [V]iew in the MVC architecture.
 
+            In a 'simple' MVC website we might construct different views for each action
+            a user could do. I decided to take some liberties here and create a more dynamic
+            website, were all the functional requirements are folded together into a single
+            page.
+
             Instead of using Python to generate raw HTML, I decided to push this job
             to a front end framework called Vue (https://vuejs.org/v2/guide/index.html).
             I felt this would better demonstrate some modern web development approaches
@@ -196,7 +208,8 @@ class Controller(BaseHTTPRequestHandler):
             name = self.params.get('name')
             if name:
                 if Model.exists(name):
-                    return self.errorMethodBadRequest('Model already exists: {0}'.format(name))
+                    return self.errorMethodBadRequest(
+                        'Model already exists: {0}'.format(name))
             model = Model(**self.params)
             model.save()
 
@@ -219,10 +232,10 @@ class Controller(BaseHTTPRequestHandler):
         # It's always nice to include a route for health checks.
         elif '/ping' == url.path:
             return self.sendAPIResponse(
-                            version=VERSION,
-                            start_time=START_TIME,
-                            up_time=time.time()-START_TIME
-                        )
+                version=VERSION,
+                start_time=START_TIME,
+                up_time=time.time() - START_TIME
+            )
 
         # Basic API endpoints for testing
         elif '/api/v1/models' == url.path:
@@ -285,7 +298,6 @@ class Controller(BaseHTTPRequestHandler):
         self.errorNotFound()
 
 
-
 class ThreadingSimpleServer(ThreadingMixIn, HTTPServer):
     ''' SQLite did not like the ThreadingMixIn because we only
         have a single persistent connection to the database.
@@ -304,7 +316,6 @@ class ThreadingSimpleServer(ThreadingMixIn, HTTPServer):
 #         The ForkingMixIn seems to have fixed these issues.
 #     '''
 #     pass
-
 
 
 # Listen and serve on specified host and port

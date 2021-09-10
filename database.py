@@ -62,7 +62,6 @@ def connect():
     return conn
 
 
-
 # Initialize database if it does not yet exist
 if not _dbExists:
 
@@ -104,6 +103,8 @@ if not _dbExists:
             make = random.choice(make_options)
             color = random.choice(color_options)
             status = random.choice(status_options)
-            cursor.execute('''INSERT INTO models (name, make, color, status) VALUES (?, ?, ?, ?)''', ( str(uuid.uuid4()), make, color, status, ) )
+            cursor.execute(
+                '''INSERT INTO models (name, make, color, status) VALUES (?, ?, ?, ?)''', (str(
+                    uuid.uuid4()), make, color, status, ))
 
         conn.commit()

@@ -11,7 +11,6 @@ import uuid
 import database
 
 
-
 class Model(object):
 
     ''' Hand rolling my own little ORM for the 'model' table.
@@ -33,7 +32,7 @@ class Model(object):
         if key in self.fields:
             if key not in self._data:
                 # TODO: guard against over writing in memory changes...
-                for row in self._fetch(name = self.name):
+                for row in self._fetch(name=self.name):
                     self._data = row
             return self._data.get(key)
 
@@ -97,9 +96,12 @@ class Model(object):
             # Always use parameter substitution to prevent SQL injection.
             args = (self.make, self.color, self.status, self.name, )
             if self.exists(name=self.name):
-                cursor.execute('''UPDATE models SET make = ?, color = ?, status = ? WHERE name = ?;''', args)
+                cursor.execute(
+                    '''UPDATE models SET make = ?, color = ?, status = ? WHERE name = ?;''', args)
             else:
-                cursor.execute('''INSERT INTO models (make, color, status, name) VALUES (?, ?, ?, ?);''', args)
+                cursor.execute(
+                    '''INSERT INTO models (make, color, status, name) VALUES (?, ?, ?, ?);''',
+                    args)
 
             # Commit changes
             conn.commit()
@@ -107,7 +109,8 @@ class Model(object):
     def delete(self):
         with database.connect() as conn:
             cursor = conn.cursor()
-            cursor.execute('''DELETE FROM models WHERE name = ?;''', (self.name,))
+            cursor.execute(
+                '''DELETE FROM models WHERE name = ?;''', (self.name,))
             conn.commit()
 
     @classmethod
@@ -129,8 +132,8 @@ class Model(object):
         with database.connect() as conn:
             cursor = conn.cursor()
             return cursor.execute(
-                        query, tuple(params)
-                    ).fetchall()
+                query, tuple(params)
+            ).fetchall()
 
     @classmethod
     def fetch(cls, **kwargs):
@@ -142,7 +145,10 @@ class Model(object):
     def exists(cls, name):
         with database.connect() as conn:
             cursor = conn.cursor()
-            row = cursor.execute('''SELECT EXISTS(SELECT 1 FROM models WHERE name = ?) AS 'exists';''', (name,)).fetchone()
+            row = cursor.execute(
+                '''SELECT EXISTS(SELECT 1 FROM models WHERE name = ?) AS 'exists';''',
+                (name,
+                 )).fetchone()
             return 0 != row['exists']
 
     def toDict(self):
@@ -153,12 +159,11 @@ class Model(object):
         return self._data
 
 
-
 class ModelCollection(object):
-    '''
-        Helper class for doing bulk operations.
+    ''' Helper class for doing bulk operations.
         This is mainly for future proofing.
     '''
+
     def __init__(self, models):
         self.collection = models
 
