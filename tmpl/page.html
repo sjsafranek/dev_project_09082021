@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html>
+    <head>
+
+        <!-- <title></title> -->
+
+        <meta charset=utf-8 />
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <meta name="author" content="Stefan Safranek">
+        <meta name="description" content=""/>
+
+        <!-- jQuery -->
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+        <!-- Bootstrap -->
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-F3w7mX95PdgyTmZZMECAngseQB83DfGTowi0iMjiWaeVhAn4FJkqJByhZMI3AhiU" crossorigin="anonymous">
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-/bQdsTh/da6pkI1MST/rWKFNjaCP5gBSY4sEBT38Q/9RBh9AH40zEOg7Hlq2THRZ" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js" integrity="sha384-W8fXfP3gkOKtndU4JGtKDvXbO53Wy8SZCQHczT5FMiiqmQfUpWbYdTil/SxwZgAN" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/js/bootstrap.min.js" integrity="sha384-skAcpIdS7UcVUC05LJ9Dxay8AXcDYfBJqt1CJ85S/CFujBsIzCIv+l9liuYLaMQ/" crossorigin="anonymous"></script>
+
+        <!-- SweetAlert2 -->
+        <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+        <!-- Vue -->
+        <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+
+        <!-- Font Awesome -->
+        <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css" integrity="sha384-AYmEC3Yw5cVb3ZcuHtOA93w35dYTsvhLPVnYs9eStHfGJvOvKxVfELGroGkvsg+p" crossorigin="anonymous"/>
+
+        <style>
+
+            #view {
+                font-size: .875rem;
+            }
+
+            .bold {
+                font-weight: 600;
+            }
+
+            .form-control-sm {
+                min-height: auto;
+                padding: .02rem .5rem;
+            }
+
+            .table-row {
+                border: 1px solid #dee2e6;
+            }
+
+            .table-row:hover {
+                background-color: rgba(0,0,0,.075);
+            }
+
+            .btn-delete {
+                cursor: pointer;
+            }
+
+            body {
+                margin-top: 40px;
+                margin-bottom: 60px;
+            }
+
+        </style>
+
+    </head>
+
+    <body>
+
+        <div class="container" id="view">
+
+            <div class="row">
+                <h4>Models</h4>
+            </div>
+
+            <div class="row mb-4">
+                <!-- Here is an example of a form -->
+                <form action="/create" method='POST'>
+                    <strong>Create Model</strong>
+                    <div class="form-group col-2 mb-2">
+                        <label for='name'>Name: </label>
+                        <input class="form-control" type='text' id='name' name='name' placeholder="Name" aria-describedby="help">
+                        <small id="help" class="form-text text-muted">If a name for the model is not supplied a UUID will be generated.</small>
+                    </div>
+                    <button class='btn btn-sm btn-primary' type='submit'>Submit</button>
+                </form>
+            </div>
+
+            <!-- Header -->
+            <div class="row bold table-row">
+                <div class="col-4">name</div>
+                <div class="col-1">make</div>
+                <div class="col-1">color</div>
+                <div class="col-1">status</div>
+                <div class="col-2">create_at</div>
+                <div class="col-2">update_at</div>
+            </div>
+
+            <!-- Filters -->
+            <div class="row bold table-row">
+                <div class="col-4">
+                    <input type="text" class="form-control form-control-sm" placeholder="name" v-model="filters.name" @change="filterChange()">
+                </div>
+                <div class="col-1">
+                    <input type="text" class="form-control form-control-sm" placeholder="make" v-model="filters.make" @change="filterChange()">
+                </div>
+                <div class="col-1">
+                    <input type="text" class="form-control form-control-sm" placeholder="color" v-model="filters.color" @change="filterChange()">
+                </div>
+                <div class="col-1">
+                    <input type="text" class="form-control form-control-sm" placeholder="status" v-model="filters.status" @change="filterChange()">
+                </div>
+                <div class="col-2">
+                    <input type="text" class="form-control form-control-sm" placeholder="create_at" v-model="filters.create_at" @change="filterChange()">
+                </div>
+                <div class="col-2">
+                    <input type="text" class="form-control form-control-sm" placeholder="update_at" v-model="filters.update_at" @change="filterChange()">
+                </div>
+            </div>
+
+            <!-- Body -->
+            <div v-for="model in models" v-model='models' class="row table-row model-container" v-bind:id="model.name.replace(/ /g, '')">
+                <div class="col-4" v-model='model.name'>
+                    <% model.name %>
+                </div>
+                <div class="col-1" >
+                    <input type="text" class="form-control form-control-sm" v-model="model.make" placeholder="make" @change="updateModel(model)"/>
+                </div>
+                <div class="col-1" >
+                    <input type="text" class="form-control form-control-sm" v-model="model.color" placeholder="color" @change="updateModel(model)"/>
+                </div>
+                <div class="col-1" >
+                    <input type="text" class="form-control form-control-sm" v-model="model.status" placeholder="status" @change="updateModel(model)"/>
+                </div>
+                <div class="col-2" v-model='model.create_at'>
+                    <% model.create_at %>
+                </div>
+                <div class="col-2" v-model='model.update_at'>
+                    <% model.update_at %>
+                </div>
+                <div class="col-1 btn-delete" @click="deleteModel(model)">
+                    <i class="fas fa-trash"></i>
+                </div>
+            </div>
+
+        </div>
+
+        <script>
+
+            var app = new Vue({
+
+                el: '#view',
+
+                delimiters: ["<%","%>"],
+
+                data: {
+                    models: {{models}},
+                    filters: {
+                        name: null,
+                        make: null,
+                        color: null,
+                        status: null,
+                        create_at: null,
+                        update_at: null
+                    }
+                },
+
+                methods: {
+
+                    filterChange: function(model) {
+                        let self = this;
+                        this._data.models.map(function(d) {
+                            let _show = true;
+                            for (let field in self._data.filters) {
+                                let value = self._data.filters[field];
+                                if (value) {
+                                    if (!d[field] || -1 == d[field].indexOf(value)) {
+                                        _show = false;
+                                        break;
+                                    }
+                                }
+                            }
+                            let $elem = $('#'+d.name.replace(/ /g, ''));
+                            _show ? $elem.show() : $elem.hide();
+                        });
+                    },
+
+                    updateModel: function(model) {
+                        // It would be nicer to use websockets for stuff like this.
+                        fetch('/api/v1/model/' + model.name, {
+                            method: 'PUT',
+                            body: JSON.stringify({"method":"update_model","params":model})
+                        }).then(function(response) {
+                            response.json().then(function(data) {
+                                if ('ok' == data.status) {
+                                    window.location.reload();
+                                    return;
+                                }
+                                Swal.fire({
+                                    icon: 'error',
+                                    text: data.error.message
+                                });
+                            });
+                        });
+                    },
+
+                    deleteModel: function(model) {
+                        let self = this;
+
+                        // Always warn the user about "dangerous" operations.
+                        Swal.fire({
+                            title: 'Are you sure?',
+                            icon: 'warning',
+                            text: 'This cannot be undone',
+                            showCloseButton: true,
+                            showCancelButton: true,
+                            // focusConfirm: false,     // <-- Turning this off to test
+                            showLoaderOnConfirm: true
+                        }).then(function(result) {
+                            if (result.isConfirmed) {
+                                fetch('/api/v1/model/' + model.name, {
+                                    method: 'DELETE'
+                                }).then(function(response) {
+                                    response.json().then(function(data) {
+                                        if ('ok' == data.status) {
+                                            // Option 1
+                                            // We can just reload the page to symulate more of a "form"
+                                            // behavior to get the changes.
+                                            window.location.reload();
+
+                                        /*
+                                            // Option 2
+                                            // Vue does a great job of binding our data to the DOM.
+                                            // By removing the model from our list Vue will automatically
+                                            // detect the changes and update the DOM dynamically.
+                                            return self._data.models = self._data.models.filter(function(d) {
+                                                return d.name != model.name;
+                                            });
+                                        */
+                                        }
+
+                                        Swal.fire({
+                                            icon: 'error',
+                                            text: data.error.message
+                                        });
+                                    });
+                                });
+                            }
+                        });
+
+                    }
+
+                }
+            });
+
+        </script>
+
+    </body>
+
+</html>
