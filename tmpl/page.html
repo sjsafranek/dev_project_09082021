@@ -564,6 +564,8 @@
 
                         // I read the "copy/edit" item as coping an individual model object,
                         // not coping the entire data set (all model objects).
+                        // Ultimately the "status" property should be controlled by a
+                        // <select> not an <input>.
                         copyModel: function(old_model) {
                             let self = this;
                             Swal.fire({
