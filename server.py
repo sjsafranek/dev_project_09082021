@@ -20,7 +20,8 @@ from urllib.parse import unquote
 from http.server import HTTPServer
 from http.server import BaseHTTPRequestHandler
 from socketserver import ThreadingMixIn
-from socketserver import ForkingMixIn
+# from socketserver import ForkingMixIn     # This does not work on windows
+# import asyncio
 import threading
 
 from models import Model
@@ -268,20 +269,22 @@ class ThreadingSimpleServer(ThreadingMixIn, HTTPServer):
 
 
 
-class ForkingHTTPServer(ForkingMixIn, HTTPServer):
-    '''
-        I was seeing that the HTTPServer was hanging on multiple
-        requests due to them blocking eachother.
-        The ForkingMixIn seems to have fixed these issues.
-    '''
-    pass
+# This is not supported for windows :(
+# class ForkingHTTPServer(ForkingMixIn, HTTPServer):
+#     '''
+#         I was seeing that the HTTPServer was hanging on multiple
+#         requests due to them blocking eachother.
+#         The ForkingMixIn seems to have fixed these issues.
+#     '''
+#     pass
 
 
 
 # Listen and serve on specified host and port
 def start(host='localhost', port=8080):
-    # server = HTTPServer((host, port), Server)
-    server = ForkingHTTPServer((host, port), Controller)
+    # server = HTTPServer((host, port), Controller)
+    # server = ForkingHTTPServer((host, port), Controller)
+    server = HTTPServer((host, port), Controller)
     print("Server started http://%s:%s" % (host, port))
 
     try:
