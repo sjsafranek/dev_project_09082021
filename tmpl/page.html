@@ -10,25 +10,32 @@
         <meta name="description" content=""/>
 
         <!-- jQuery -->
-        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <script defer src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
         <!-- Bootstrap -->
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-F3w7mX95PdgyTmZZMECAngseQB83DfGTowi0iMjiWaeVhAn4FJkqJByhZMI3AhiU" crossorigin="anonymous">
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-/bQdsTh/da6pkI1MST/rWKFNjaCP5gBSY4sEBT38Q/9RBh9AH40zEOg7Hlq2THRZ" crossorigin="anonymous"></script>
-        <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js" integrity="sha384-W8fXfP3gkOKtndU4JGtKDvXbO53Wy8SZCQHczT5FMiiqmQfUpWbYdTil/SxwZgAN" crossorigin="anonymous"></script>
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/js/bootstrap.min.js" integrity="sha384-skAcpIdS7UcVUC05LJ9Dxay8AXcDYfBJqt1CJ85S/CFujBsIzCIv+l9liuYLaMQ/" crossorigin="anonymous"></script>
+        <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-/bQdsTh/da6pkI1MST/rWKFNjaCP5gBSY4sEBT38Q/9RBh9AH40zEOg7Hlq2THRZ" crossorigin="anonymous"></script>
+        <script defer src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js" integrity="sha384-W8fXfP3gkOKtndU4JGtKDvXbO53Wy8SZCQHczT5FMiiqmQfUpWbYdTil/SxwZgAN" crossorigin="anonymous"></script>
+        <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/js/bootstrap.min.js" integrity="sha384-skAcpIdS7UcVUC05LJ9Dxay8AXcDYfBJqt1CJ85S/CFujBsIzCIv+l9liuYLaMQ/" crossorigin="anonymous"></script>
 
         <!-- SweetAlert2 -->
-        <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <script defer src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
         <!-- Vue.js -->
-        <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+        <script defer src="https://cdn.jsdelivr.net/npm/vue@2"></script>
 
         <!-- Font Awesome -->
         <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css" integrity="sha384-AYmEC3Yw5cVb3ZcuHtOA93w35dYTsvhLPVnYs9eStHfGJvOvKxVfELGroGkvsg+p" crossorigin="anonymous"/>
 
         <!-- D3.js -->
-        <script src="https://d3js.org/d3.v3.min.js"></script>
+        <script defer src="https://d3js.org/d3.v3.min.js"></script>
+
+        <!-- Fetch Polyfill -->
+        <!-- The fetch api is not compatible with Internet Explorer:
+                https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API
+             I am not sure if certain networks will block this...
+        -->
+        <script defer src="https://raw.githubusercontent.com/github/fetch/master/fetch.js"></script>
 
         <style>
 
@@ -43,6 +50,10 @@
 
             .text-bold {
                 font-weight: 600;
+            }
+
+            .text-underline {
+                text-decoration: underline;
             }
 
             .form-control-sm {
@@ -96,6 +107,30 @@
             }
 
 
+
+            .pulsate-info-text {
+                -webkit-animation: pulsate 1s cubic-bezier(0.24, 0, 0.38, 1);
+                -webkit-animation-iteration-count: infinite;
+                animation: pulsate-warning-text 1s cubic-bezier(0.24, 0, 0.38, 1) infinite;
+                opacity: 0.5;
+            }
+
+            @-webkit-keyframes pulsate-warning-text {
+                0% {
+                    opacity: 0.5;
+                    color: black;
+                }
+                50% {
+                    opacity: 1.0;
+                    color: darkblue;
+                }
+                100% {
+                    opacity: 0.5;
+                    color: black;
+                }
+            }
+
+
             /* SVG Chart styling */
 
             svg {
@@ -116,8 +151,6 @@
             }
 
 
-
-
         </style>
 
     </head>
@@ -127,7 +160,12 @@
         <div class="container" id="view">
 
             <div class="row">
-                <h4>Models</h4>
+                <h4>
+                    <span class="label-create">C</span>
+                    <span class="label-read">R</span>
+                    <span class="label-update">U</span>
+                    <span class="label-delete">D</span>
+                </h4>
             </div>
 
             <div class="row mb-4">
@@ -151,7 +189,7 @@
                             <input class="form-control" type='text' id='name' name='name' placeholder="Name" aria-describedby="help" required>
                             <!-- <small id="help" class="form-text text-muted">If a name for the model is not supplied a UUID will be generated.</small> -->
                         </div>
-                        <button class='btn btn-sm btn-primary float-end' type='submit'>Submit</button>
+                        <button class='btn btn-sm btn-primary float-end' type='submit' @mouseover="toggleCreate" @mouseout="toggleCreate">Submit</button>
                     </form>
                 </div>
             </div>
@@ -171,22 +209,52 @@
             <div class="row bold table-row filters-container">
                 <!-- TODO Add filter icon -->
                 <div class="col-4">
-                    <input type="text" class="form-control form-control-sm" placeholder="name" title="filter" v-model="filters.name" @keyup="filterChange()">
+                    <div class="input-group">
+                        <!-- <span class="input-group-text"> -->
+                            <!-- <i class="fas fa-filter"></i> -->
+                        <!-- </span> -->
+                        <input type="text" class="form-control form-control-sm" placeholder="name" title="filter" v-model="filters.name" @keyup="filterChange()">
+                    </div>
                 </div>
                 <div class="col-1">
-                    <input type="text" class="form-control form-control-sm" placeholder="make" title="filter" v-model="filters.make" @keyup="filterChange()">
+                    <div class="input-group">
+                        <!-- <span class="input-group-text"> -->
+                            <!-- <i class="fas fa-filter"></i> -->
+                        <!-- </span> -->
+                        <input type="text" class="form-control form-control-sm" placeholder="make" title="filter" v-model="filters.make" @keyup="filterChange()">
+                    </div>
                 </div>
                 <div class="col-1">
-                    <input type="text" class="form-control form-control-sm" placeholder="color" title="filter" v-model="filters.color" @keyup="filterChange()">
+                    <div class="input-group">
+                        <!-- <span class="input-group-text"> -->
+                            <!-- <i class="fas fa-filter"></i> -->
+                        <!-- </span> -->
+                        <input type="text" class="form-control form-control-sm" placeholder="color" title="filter" v-model="filters.color" @keyup="filterChange()">
+                    </div>
                 </div>
                 <div class="col-1">
-                    <input type="text" class="form-control form-control-sm" placeholder="status" title="filter" v-model="filters.status" @keyup="filterChange()">
+                    <div class="input-group">
+                        <!-- <span class="input-group-text"> -->
+                            <!-- <i class="fas fa-filter"></i> -->
+                        <!-- </span> -->
+                        <input type="text" class="form-control form-control-sm" placeholder="status" title="filter" v-model="filters.status" @keyup="filterChange()">
+                    </div>
                 </div>
                 <div class="col-2">
-                    <input type="text" class="form-control form-control-sm" placeholder="create_at" title="filter" v-model="filters.create_at" @keyup="filterChange()">
+                    <div class="input-group">
+                        <!-- <span class="input-group-text"> -->
+                            <!-- <i class="fas fa-filter"></i> -->
+                        <!-- </span> -->
+                        <input type="text" class="form-control form-control-sm" placeholder="create_at" title="filter" v-model="filters.create_at" @keyup="filterChange()">
+                    </div>
                 </div>
                 <div class="col-2">
-                    <input type="text" class="form-control form-control-sm" placeholder="update_at" title="filter" v-model="filters.update_at" @keyup="filterChange()">
+                    <div class="input-group">
+                        <!-- <span class="input-group-text"> -->
+                            <!-- <i class="fas fa-filter"></i> -->
+                        <!-- </span> -->
+                        <input type="text" class="form-control form-control-sm" placeholder="update_at" title="filter" v-model="filters.update_at" @keyup="filterChange()">
+                    </div>
                 </div>
                 <div class="col-1"></div>
             </div>
@@ -197,18 +265,18 @@
                     <!-- Vue will act as our templating engine. It will loop through the
                          model objects and create a new row for our makeshift "table".
                     -->
-                    <div v-for="model in models" v-model='models' class="row table-row model-container" v-bind:id="model.name.replace(/ /g, '')">
+                    <div v-for="model in models" v-model='models' class="row table-row model-container" v-bind:id="model.name.replace(/ /g, '')" @mouseover="toggleRead" @mouseout="toggleRead">
                         <div class="col-4" v-model='model.name'>
                             <% model.name %>
                         </div>
                         <div class="col-1" >
-                            <input type="text" class="form-control form-control-sm" v-model="model.make" placeholder="make" @change="updateModel(model)"/>
+                            <input type="text" class="form-control form-control-sm" v-model="model.make" placeholder="make" @change="updateModel(model)" @mouseover="toggleUpdate" @mouseout="toggleUpdate"/>
                         </div>
                         <div class="col-1" >
-                            <input type="text" class="form-control form-control-sm" v-model="model.color" placeholder="color" @change="updateModel(model)"/>
+                            <input type="text" class="form-control form-control-sm" v-model="model.color" placeholder="color" @change="updateModel(model)" @mouseover="toggleUpdate" @mouseout="toggleUpdate"/>
                         </div>
                         <div class="col-1" >
-                            <input type="text" class="form-control form-control-sm" v-model="model.status" placeholder="status" @change="updateModel(model)"/>
+                            <input type="text" class="form-control form-control-sm" v-model="model.status" placeholder="status" @change="updateModel(model)" @mouseover="toggleUpdate" @mouseout="toggleUpdate"/>
                         </div>
                         <div class="col-2" v-model='model.create_at'>
                             <% model.create_at %>
@@ -217,10 +285,10 @@
                             <% model.update_at %>
                         </div>
                         <div class="col-1 model-controls-container">
-                            <span class="me-1 btn-copy" title="Copy" @click="copyModel(model)">
+                            <span class="me-1 btn-copy" title="Copy" @click="copyModel(model)" @mouseover="toggleCreate" @mouseout="toggleCreate">
                                 <i class="far fa-copy"></i>
                             </span>
-                            <span class="me-1 btn-delete" title="Delete" @click="deleteModel(model)">
+                            <span class="me-1 btn-delete" title="Delete" @click="deleteModel(model)" @mouseover="toggleDelete" @mouseout="toggleDelete">
                                 <i class="fas fa-trash"></i>
                             </span>
                         </div>
@@ -233,16 +301,15 @@
         <script>
 
             // I would usually put these in separate JavaScript files.
-            // For this project I am just foinf "hand-wave" around it,
-            // because I don't want to setup a '/static' route on the
+            // For this project I am just going "hand-wave" around it.
+            // I don't really want to setup a '/static' route on the
             // server side.
 
 
-            // PieChart class to display 'status' values
-            // within selection.
+            // PieChart class to display 'status' values within selection.
             var PieChart = function() {
 
-                // We can make this 'private' attributes.
+                // We can make most of these items 'private' attributes.
                 let svg = d3.select("svg#chart")
                     .append("g");
 
@@ -336,7 +403,7 @@
                 		.append("text")
                 		.attr("dy", ".35em")
                 		.text(function(d) {
-                			return d.data.label;
+                            return `${d.data.value} ${d.data.label}`;
                 		});
 
                 	function midAngle(d){
@@ -394,148 +461,275 @@
 
 
 
-            // I am mainly using Vue to as a templating engine.
-            // The added benefits is it will setup events and data bindings with the DOM.
-            var app = new Vue({
+            // Lets throw in some Vanilla JS for old times sake.
+            document.addEventListener("DOMContentLoaded", function() {
 
-                el: '#view',
+                // I am mainly using Vue to as a templating engine.
+                // The added benefits is it will setup events and data bindings with the DOM.
+                window.app = new Vue({
 
-                delimiters: ["<%","%>"],
+                    el: '#view',
 
-                data: {
-                    models: {{models}},
-                    filters: {
-                        name: null,
-                        make: null,
-                        color: null,
-                        status: null,
-                        create_at: null,
-                        update_at: null
-                    }
-                },
+                    delimiters: ["<%","%>"],
 
-                mounted: function () {
-                    let self = this;
+                    data: {
+                        models: {{models}},
+                        filters: {
+                            name: null,
+                            make: null,
+                            color: null,
+                            status: null,
+                            create_at: null,
+                            update_at: null
+                        }
+                    },
 
-                    // Lets setup the basic D3 chart to show the 'status' values.
-                    this.chart = new PieChart();
-                    this.chart.update(this._data.models.map(function(d) {
-                        return d.status;
-                    }));
-                },
-
-                methods: {
-
-                    // Ultimately if I were to do this again I would make each
-                    // "Model" object a Vue component. That way I could have the
-                    // parent (app) send Events to its children.
-                    // https://vuejs.org/v2/guide/components.html
-                    filterChange: function(model) {
+                    mounted: function () {
                         let self = this;
-                        // Because we are doing many DOM manipluations I will run
-                        // this in a callback function via the Array.map/filter function.
-                        let models = this._data.models.filter(function(d) {
-                            let _show = true;
-                            for (let field in self._data.filters) {
-                                let value = self._data.filters[field];
-                                if (value) {
-                                    if (!d[field] || -1 == d[field].indexOf(value)) {
-                                        _show = false;
-                                        break;
+
+                        // Lets setup the basic D3 chart to show the 'status' values.
+                        this.chart = new PieChart();
+                        this.chart.update(this._data.models.map(function(d) {
+                            return d.status;
+                        }));
+                    },
+
+                    methods: {
+                        // Indicator
+                        toggleCreate: function() {
+                            $('.label-create').toggleClass('pulsate-info-text text-bold text-underline');
+                        },
+
+                        toggleRead: function() {
+                            $('.label-read').toggleClass('pulsate-info-text text-bold text-underline');
+                        },
+
+                        toggleUpdate: function() {
+                            $('.label-update').toggleClass('pulsate-info-text text-bold text-underline');
+                        },
+
+                        toggleDelete: function() {
+                            $('.label-delete').toggleClass('pulsate-info-text text-bold text-underline');
+                        },
+
+                        // Simple method to report errors back to the user.
+                        showError: function(message) {
+                            Swal.fire({
+                                icon: 'error',
+                                text: message
+                            });
+                        },
+
+                        getRowByModelName: function(model) {
+                            return $('#'+model.name.replace(/ /g, ''));
+                        },
+
+                        // Ultimately if I were to do this again I would make each
+                        // "Model" object a Vue component. That way I could have the
+                        // parent (app) send Events to its children.
+                        // https://vuejs.org/v2/guide/components.html
+                        filterChange: function(model) {
+                            let self = this;
+
+                            // Because we are doing many DOM manipluations I will run
+                            // this in a callback function via the Array.map/filter function.
+                            let models = this._data.models.filter(function(d) {
+                                let _show = true;
+                                for (let field in self._data.filters) {
+                                    let value = self._data.filters[field];
+                                    if (value) {
+                                        if (!d[field] || -1 == d[field].indexOf(value)) {
+                                            _show = false;
+                                            break;
+                                        }
                                     }
                                 }
-                            }
-                            let $elem = $('#'+d.name.replace(/ /g, ''));
-                            _show ? $elem.show() : $elem.hide();
-                            return _show;
-                        });
+                                // let $elem = $('#'+d.name.replace(/ /g, ''));
+                                // _show ? $elem.show() : $elem.hide();
+                                let $elem = self.getRowByModelName(d);
+                                _show ? $elem.fadeIn() : $elem.fadeOut();
+                                return _show;
+                            });
 
-                        // Update SVG chart to display filtered 'status' values.
-                        this.chart.update(
-                            models.map(function(d) {
-                                return d.status;
-                            })
-                        );
-                    },
+                            // Update SVG chart to display filtered 'status' values.
+                            this.chart.update(
+                                models.map(function(d) {
+                                    return d.status;
+                                })
+                            );
+                        },
 
-                    copyModel: function(model) {
-                        console.log(model);
-                        debugger;
-                    },
+                        copyModel: function(old_model) {
+                            let self = this;
+                            Swal.fire({
+                                title: 'Copy Model',
+                                html: `
+                                    <div>
+                                        <div class="input-group input-group-sm pb-1">
+                                            <span class="input-group-text">
+                                                Name
+                                            </span>
+                                            <input type="text" id="name" class="form-control form-control-sm" placeholder="name" required>
+                                        </div>
+                                        <div class="input-group input-group-sm pb-1">
+                                            <span class="input-group-text">
+                                                Make
+                                            </span>
+                                            <input type="text" id="make" class="form-control form-control-sm" placeholder="make" value="${old_model.make}">
+                                        </div>
+                                        <div class="input-group input-group-sm pb-1">
+                                            <span class="input-group-text">
+                                                Color
+                                            </span>
+                                            <input type="text" id="color" class="form-control form-control-sm" placeholder="color" value="${old_model.color}">
+                                        </div>
+                                        <div class="input-group input-group-sm pb-1">
+                                            <span class="input-group-text">
+                                                Status
+                                            </span>
+                                            <input type="text" id="status" class="form-control form-control-sm" placeholder="status" value="${old_model.status}">
+                                        </div>
+                                    </div>
+                                `,
+                                showCloseButton: true,
+                                showCancelButton: true,
+                                focusConfirm: false,
+                                showLoaderOnConfirm: true,
+                                allowOutsideClick: function(){ return !Swal.isLoading(); },
+                                didOpen: function() {
+                                    // Setup some controls on requiring the 'name' field.
+                                    let $confirmButton = $(Swal.getPopup().querySelector('.swal2-confirm'));
+                                    $confirmButton.prop('disabled', true);
+                                    $(Swal.getPopup().querySelector('#name')).on('change', function(event) {
+                                        $confirmButton.prop('disabled', '' == this.value);
+                                    });
+                                },
+                                preConfirm: function() {
 
-                    updateModel: function(model) {
+                                    // Return Promise
+                                    return fetch('/api/v1/model', {
+                                        method: 'POST',
+                                        headers: {
+                                            'Content-Type': 'application/json'
+                                        },
+                                        body: JSON.stringify({
+                                            "method": "create_model",
+                                            "params": {
+                                                name: Swal.getPopup().querySelector('#name').value,
+                                                make: Swal.getPopup().querySelector('#make').value,
+                                                color: Swal.getPopup().querySelector('#color').value,
+                                                status: Swal.getPopup().querySelector('#status').value
+                                            }
+                                        })
+                                    }).then(function(response) {
+                                        if (!response.ok) {
+                                            throw new Error(response.statusText)
+                                        }
+                                        return response.json();
+                                    }).catch(function(error) {
+                                        Swal.showValidationMessage(`Request failed: ${error}`);
+                                    });
+
+                                }
+                            }).then(function(result) {
+                                if (result.isConfirmed) {
+                                    let new_model = result.value.data.model;
+                                    self._data.models.push(result.value.data.model);
+                                    // Allow Vue to add element to DOM before scrolling to view
+                                    setTimeout(function() {
+                                        self.getRowByModelName(new_model)[0]
+                                            .scrollIntoView({
+                                                behavior: "smooth", // or "auto" or "instant"
+                                                block: "start" // or "end"
+                                            });
+                                    }, 200);
+                                }
+                            });
+                        },
+
                         // Since these are simple edits we are going to fire off
                         // an API request to make these changes on the fly.
                         // It would be nicer to have a websocket to dynamically fire
                         // these events to the server side.
-                        let self = this;
-                        fetch('/api/v1/model/' + model.name, {
-                            method: 'PUT',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({"method":"update_model","params":model})
-                        }).then(function(response) {
-                            response.json().then(function(data) {
-                                if ('ok' == data.status) {
-                                    // 'Trigger' a filter change.
-                                    return self.filterChange();
+                        updateModel: function(model) {
+
+                            // Sanitize empty string values.
+                            // This should be pushed down to the server side &/or
+                            // controlled via a TRIGGER within the database.
+                            for (let i in model) {
+                                if ('' == model[i]) {
+                                    model[i] = null;
                                 }
-                                Swal.fire({
-                                    icon: 'error',
-                                    text: data.error.message
+                            }
+
+                            // Send api call via browsers fetch functionaly.
+                            let self = this;
+                            fetch('/api/v1/model/' + model.name, {
+                                method: 'PUT',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({"method":"update_model","params":model})
+                            }).then(function(response) {
+                                response.json().then(function(data) {
+                                    // TODO: Display toast alert to notify user.
+                                    ('ok' == data.status) ?
+                                        self.filterChange() : self.showError(data.error.message);
                                 });
+                            }).catch(function(error) {
+                                // NOTE: Ideally, I would rollback the user update to
+                                // the previous value...
+                                self.showError('Unable to communicate with server');
                             });
-                        });
-                    },
+                        },
 
-                    deleteModel: function(model) {
-                        let self = this;
+                        deleteModel: function(model) {
+                            // Always warn the user about "dangerous" operations.
+                            let self = this;
+                            Swal.fire({
+                                title: 'Are you sure?',
+                                icon: 'warning',
+                                // Hope no one uses Internet Explorer cause the Template_literals will not work...
+                                // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals
+                                html: `
+                                    <div>Do you wish to delete ${model.name}.</div>
+                                    <div class="pulsate-warning-text text-bold">This cannot be undone.</div>
+                                `,
+                                showCloseButton: true,
+                                showCancelButton: true,
+                                focusConfirm: false,
+                                showLoaderOnConfirm: true
+                            }).then(function(result) {
+                                if (result.isConfirmed) {
+                                    fetch('/api/v1/model/' + model.name, {
+                                        method: 'DELETE'
+                                    }).then(function(response) {
+                                        response.json().then(function(data) {
+                                            if ('ok' == data.status) {
+                                                // Vue does a great job of binding our data to the DOM.
+                                                // By removing the model from our list Vue will automatically
+                                                // detect the changes and update the DOM dynamically.
+                                                self._data.models = self._data.models.filter(function(d) {
+                                                    return d.name != model.name;
+                                                });
 
-                        // Always warn the user about "dangerous" operations.
-                        Swal.fire({
-                            title: 'Are you sure?',
-                            icon: 'warning',
-                            html: `
-                                <div>Do you wish to delete ${model.name}.</div>
-                                <div class="pulsate-warning-text text-bold">This cannot be undone.</div>
-                            `,
-                            showCloseButton: true,
-                            showCancelButton: true,
-                            focusConfirm: false,
-                            showLoaderOnConfirm: true
-                        }).then(function(result) {
-                            if (result.isConfirmed) {
-                                fetch('/api/v1/model/' + model.name, {
-                                    method: 'DELETE'
-                                }).then(function(response) {
-                                    response.json().then(function(data) {
-                                        if ('ok' == data.status) {
-                                            // Vue does a great job of binding our data to the DOM.
-                                            // By removing the model from our list Vue will automatically
-                                            // detect the changes and update the DOM dynamically.
-                                            self._data.models = self._data.models.filter(function(d) {
-                                                return d.name != model.name;
-                                            });
-
-                                            // 'Trigger' a filter change.
-                                            return self.filterChange();
-                                        }
-
-                                        Swal.fire({
-                                            icon: 'error',
-                                            text: data.error.message
+                                                // 'Trigger' a filter change.
+                                                return self.filterChange();
+                                            }
+                                            self.showError(data.error.message);
                                         });
                                     });
-                                });
-                            }
-                        });
+                                }
+                            }).catch(function(error) {
+                                self.showError('Unable to communicate with server');
+                            });
+
+                        }
 
                     }
+                });
 
-                }
             });
-
 
         </script>
 

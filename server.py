@@ -39,6 +39,9 @@ class Controller(BaseHTTPRequestHandler):
 
         I typically use frameworks such as Django, Tornado or Flask for Python
         webs development. I like using Gorilla for GoLang web development.
+
+        TODO:
+         - Add a custom log format. I don't like the default one.
     '''
 
     def redirect(self, path):
@@ -194,7 +197,7 @@ class Controller(BaseHTTPRequestHandler):
             if name:
                 if Model.exists(name):
                     return self.errorMethodBadRequest('Model already exists: {0}'.format(name))
-            model = Model(name=name)
+            model = Model(**self.params)
             model.save()
 
             # Depending on endpoint return api response or redirect.
@@ -307,8 +310,8 @@ class ThreadingSimpleServer(ThreadingMixIn, HTTPServer):
 # Listen and serve on specified host and port
 def start(host='localhost', port=8080):
     # server = ForkingHTTPServer((host, port), Controller)
-    # server = HTTPServer((host, port), Controller)
     server = ThreadingSimpleServer((host, port), Controller)
+
     print("Server started http://%s:%s" % (host, port))
 
     try:

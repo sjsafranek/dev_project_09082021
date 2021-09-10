@@ -18,7 +18,7 @@ it out using the following operating systems and versions:
 | pysqlite | 2.6.0     | 2.6.0      |
 | Python   | 3.7.3     | 3.9.7      |
 
-Instead of doing a simple 
+Instead of doing a "simple" website I added some dynamic UI components with Vue and D3.
 
 
 ## Usage
