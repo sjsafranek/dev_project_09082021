@@ -19,6 +19,7 @@ from socketserver import ThreadingMixIn
 # from socketserver import ForkingMixIn     # This does not work on windows
 # import asyncio        # I haven't used this enough. If I have time I
 # might try to utilize it.
+import threading
 
 from models import Model
 
@@ -56,6 +57,10 @@ class Controller(BaseHTTPRequestHandler):
         self.send_header("Content-type", content_type)
         self.end_headers()
         self.wfile.write(bytes(content, "UTF-8"))
+        # try:
+        self.wfile.flush()
+        # finally:
+        # self.finish()
 
     # The next few methods are just helpers to keep things clean
     # within our application logic.
@@ -299,11 +304,13 @@ class Controller(BaseHTTPRequestHandler):
 
 
 class ThreadingSimpleServer(ThreadingMixIn, HTTPServer):
-    ''' SQLite did not like the ThreadingMixIn because we only
-        have a single persistent connection to the database.
+    ''' SQLite did not like the ThreadingMixIn when we had a single persistent
+        database connection. I was going to scrap this and just use the plain
+        HTTPServer, but unfortunately I would get the occasional hang when using
+        multiple browser tabs.
 
-        Had to start using the ThreadingMixIn because the HTTPServer
-        would block when I was using multiple browser tabs.
+        Unfortunately, this will occasionally deadlocks when it is shutting down.
+        I looked around but haven't found a good solution yet...
     '''
     pass
 
@@ -322,16 +329,15 @@ class ThreadingSimpleServer(ThreadingMixIn, HTTPServer):
 def start(host='localhost', port=8080):
     # server = ForkingHTTPServer((host, port), Controller)
     server = ThreadingSimpleServer((host, port), Controller)
-
     print("Server started http://%s:%s" % (host, port))
 
     try:
         server.serve_forever()
     except KeyboardInterrupt:
         pass
+    finally:
+        server.shutdown()
+        # server.server_close()
+        # server.socket.close()
 
-    server.server_close()
     print("Server stopped.")
-
-
-#
