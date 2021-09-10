@@ -21,8 +21,8 @@ it out using the following operating systems and versions:
 Instead of doing a "simple" website I opted for a more dynamic UI using with Vue and D3.
 
 I included comments throughout the code detailing some of my though process as I went
-through the exercise. I apologize in advance for any spell mistakes and I thank you for
-your consideration.
+through the exercise. I tried to identify as many bugs as I could (all software has them).
+I apologize in advance for any spell mistakes and I thank you for your consideration.
 
 
 ## Usage
