@@ -599,6 +599,7 @@
                                 showCloseButton: true,
                                 showCancelButton: true,
                                 focusConfirm: false,
+                                backdrop: true,
                                 showLoaderOnConfirm: true,
                                 allowOutsideClick: function(){ return !Swal.isLoading(); },
                                 didOpen: function() {
@@ -674,7 +675,7 @@
                             // It would be nicer to have a websocket to dynamically fire
                             // these events to the server side.
                             let self = this;
-                            fetch('/api/v1/model/' + model.name, {
+                            return fetch('/api/v1/model/' + model.name, {
                                 method: 'PUT',
                                 headers: {
                                     'Content-Type': 'application/json'
@@ -708,6 +709,7 @@
                                 showCloseButton: true,
                                 showCancelButton: true,
                                 focusConfirm: false,
+                                backdrop: true,
                                 showLoaderOnConfirm: true,
                                 // Here is a nice example of a Promise chain
                                 preConfirm: function() {
