@@ -118,13 +118,27 @@ class Model(object):
             Model(**row) for row in cls._fetch(**kwargs)
         ]
 
+    @classmethod
+    def exists(cls, name):
+        return 0 != len(cls._fetch(name=name))
+
     def toDict(self):
         data = self._fetch(name=self.name)
         if len(data):
-
             return data[0]
         return self._data
 
 
+
+
+class ModelCollection(object):
+    '''
+        Helper class for doing bulk operations
+    '''
+    def __init__(self, models):
+        self.collection = models
+
+    def toDict(self):
+        return [item.toDict() for item in self.collection]
 
 #

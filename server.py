@@ -4,10 +4,11 @@
 This will constitute as our "controller".
 
 I hand rolled this using the standard modules to avoid any dependency issues.
-It was nice learing more about the http.server module.
+It was nice learing more about the http.server module even though it is pretty
+low level (at least for Python).
 
 I typically use frameworks such as Django, Tornado or Flask for Python
-webserver development.
+webs development. I also use Gorilla for GoLang web development.
 '''
 
 import re
@@ -23,6 +24,8 @@ from socketserver import ForkingMixIn
 import threading
 
 from models import Model
+from models import ModelCollection
+from views import ModelsView
 
 
 VERSION = '0.0.1'
@@ -30,21 +33,20 @@ VERSION = '0.0.1'
 START_TIME = time.time()
 
 
-# def internalServerErrorHandler(func):
-#     def wrapper():
-#         try:
-#             func()
-#         except Exception as e:
-#             pass
-#     return wrapper
-
-
 
 # Basic server for handling requests
-class Server(BaseHTTPRequestHandler):
+class Controller(BaseHTTPRequestHandler):
+
+    def redirect(self, path):
+        self.send_response(302)
+        self.send_header('Location', '/')
+        self.end_headers()
 
     @property
     def body(self):
+        '''
+            We will read the request body once by caching the results for later.
+        '''
         if hasattr(self, '_body'):
             return self._body
         content_len = int(self.headers.get('content-length', 0))
@@ -52,11 +54,22 @@ class Server(BaseHTTPRequestHandler):
         return self._body
 
     def json(self):
-        if self.body:
-            try:
-                return json.loads(self.body)
-            except:
-                return {}
+        if 'application/json' == self.headers.get('content-type'):
+            if self.body:
+                try:
+                    return json.loads(self.body)
+                except:
+                    return {}
+        return {}
+
+    @property
+    def form(self):
+        if 'application/x-www-form-urlencoded' == self.headers.get('content-type'):
+            if self.body:
+                params = parse_qs(self.body)
+                return {
+                    k.decode(): v[0].decode() for k, v in params.items() if v is not None
+                }
         return {}
 
     @property
@@ -67,9 +80,6 @@ class Server(BaseHTTPRequestHandler):
             lookup.
         '''
         params = parse_qs(urlparse(self.path).query)
-        params = {
-            field: params.get(field) for field in Model.fields
-        }
         return {
             k: v[0] for k, v in params.items() if v is not None
         }
@@ -82,17 +92,21 @@ class Server(BaseHTTPRequestHandler):
         '''
         return {
             **self.args,
+            **self.form,
             **self.json().get('params', {})
         }
 
-    def send(self, content, content_type, status=200):
+    def send(self, content, content_type='text/plain', status=200):
         self.send_response(status)
         self.send_header("Content-type", content_type)
         self.end_headers()
         self.wfile.write(bytes(content, "UTF-8"))
 
     def sendJSON(self, payload, status=200):
-        self.send(json.dumps(payload), 'application/json', status=status)
+        self.send(json.dumps(payload), content_type='application/json', status=status)
+
+    def sendHTML(self, content, status=200):
+        self.send(content, content_type='text/html', status=status)
 
     def errorNotFound(self, message='Not Found'):
         self.sendJSON({"status":"error", "error": {"message": message}}, status=404)
@@ -114,10 +128,15 @@ class Server(BaseHTTPRequestHandler):
         if url.path.startswith('/api/v1/model/'):
             parts = url.path.replace('/api/v1/model/', '').split('/')
             return unquote(parts[0])
+        elif url.path.startswith('/model/'):
+            parts = url.path.replace('/model/', '').split('/')
+            return unquote(parts[0])
         return None
 
     def getModel(self):
         name = self._getModelNameFromUrl()
+        if not name:
+            name = self.params['name']
         models = Model.fetch(name=name)
         return models[0] if len(models) else None
 
@@ -144,6 +163,19 @@ class Server(BaseHTTPRequestHandler):
             if model:
                 return self.sendAPIResponse(model=model.toDict())
 
+        # The next two endpoints will interface with the "View" component
+        elif url.path in ['/', '/models']:
+            view = ModelsView(ModelCollection(Model.fetch(**self.params)))
+            page = view.render()
+            return self.sendHTML(page)
+
+        elif re.match(r'^/model/[^/]+$', url.path):
+            model = self.getModel()
+            if model:
+                view = ModelsView(ModelCollection([model]))
+                page = view.render()
+                return self.sendHTML(page)
+
         self.errorNotFound()
 
     def do_POST(self):
@@ -155,21 +187,31 @@ class Server(BaseHTTPRequestHandler):
         '''
 
         url = urlparse(self.path)
-        if re.match(r'^/api/v1/model/[^/]+$', url.path):
+
+        # Api endpoints
+        if '/api/v1/model' == url.path:
             name = self.params.get('name')
             if name:
-                models = Model.fetch(name=name)
-                if len(models):
+                if Model.exists(name):
                     return self.errorMethodBadRequest('Model already exists')
             model = Model(name=name)
             model.save()
             return self.sendAPIResponse(model=model.toDict())
 
+        # Form endpoints
+        elif '/create' == url.path:
+            name = self.params.get('name')
+            if name:
+                if Model.exists(name):
+                    return self.errorMethodBadRequest('Model already exists')
+            model = Model(name=name)
+            model.save()
+            return self.redirect('/')
+
         self.errorNotFound()
 
     def do_PUT(self):
         url = urlparse(self.path)
-
         if re.match(r'^/api/v1/model/[^/]+$', url.path):
             model = self.getModel()
             if model:
@@ -185,13 +227,11 @@ class Server(BaseHTTPRequestHandler):
 
     def do_DELETE(self):
         url = urlparse(self.path)
-
         if url.path.startswith('/api/v1/model/'):
             model = self.getModel()
             if model:
                 model.delete()
                 return self.sendAPIResponse()
-
         self.errorNotFound()
 
 
@@ -218,7 +258,7 @@ class ForkingHTTPServer(ForkingMixIn, HTTPServer):
 # Listen and serve on specified host and port
 def start(host='localhost', port=8080):
     # server = HTTPServer((host, port), Server)
-    server = ForkingHTTPServer((host, port), Server)
+    server = ForkingHTTPServer((host, port), Controller)
     print("Server started http://%s:%s" % (host, port))
 
     try:
