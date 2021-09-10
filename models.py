@@ -3,15 +3,25 @@
 '''
 Interfaces with the sqlite3 database.
 
-This is our "model".
+This is our "[M]odel" in the MVC architecture.
 '''
 
 import uuid
 
+
+# We are just going to use a single database
+# connection for this project.
 from database import conn
 
 
 class Model(object):
+
+    ''' Hand rolling my own little ORM for the 'model' table.
+        Lots of room for improvement here. Some of the functionaly
+        is a little 'happy path' for my liking.
+
+        I am taking some inspiration from the Django ORM.
+    '''
 
     fields = ['name', 'make', 'color', 'status', 'create_at', 'update_at']
     filterable = ['name', 'make', 'color', 'status', 'create_at', 'update_at']
@@ -21,8 +31,10 @@ class Model(object):
         self._data = kwargs
 
     def get(self, key):
+        # We are technically using self._data as a cache
         if key in self.fields:
             if key not in self._data:
+                # TODO: guard against over writing in memory changes...
                 for row in self._fetch(name = self.name):
                     self._data = row
             return self._data.get(key)
@@ -71,20 +83,21 @@ class Model(object):
         the database maintain control over DEFAULT values. According to the SQLite documentation 'RETURNING'
         is availble since version 3.35.0 (2021-03-12): https://www.sqlite.org/lang_returning.html
 
-            - https://github.com/sjsafranek/find5/blob/c8d5bbbcfb4b33f420a83f07025bad9727474ce3/findapi/lib/database/database.go#L113
-            - https://github.com/sjsafranek/find5/blob/c8d5bbbcfb4b33f420a83f07025bad9727474ce3/finddb_schema/base_schema/create_users_table.sql#L6
+        https://github.com/sjsafranek/find5/blob/c8d5bbbcfb4b33f420a83f07025bad9727474ce3/findapi/lib/database/database.go#L113
+        https://github.com/sjsafranek/find5/blob/c8d5bbbcfb4b33f420a83f07025bad9727474ce3/finddb_schema/base_schema/create_users_table.sql#L6
 
         '''
-        # If 'name' is not supplied generate a random one
+        # If the 'name' parameter is not supplied generate a random one.
         if 'name' not in self._data or not self._data['name']:
             self._data['name'] = str(uuid.uuid4())
 
         # Get cursor
         cursor = conn.cursor()
 
-        # Determine if this is an INSERT or UPDATE
+        # Determine if this is an INSERT or UPDATE.
+        # Always use parameter substitution to prevent SQL injection.
         args = (self.make, self.color, self.status, self.name, )
-        if len(self._fetch(name=self.name)):
+        if self.exists(name=self.name):
             cursor.execute('''UPDATE models SET make = ?, color = ?, status = ? WHERE name = ?;''', args)
         else:
             cursor.execute('''INSERT INTO models (make, color, status, name) VALUES (?, ?, ?, ?);''', args)
@@ -101,16 +114,21 @@ class Model(object):
     def _fetch(cls, **kwargs):
         # Build query and collect filter params
         query = '''SELECT * FROM models'''
-        params = tuple()
-        if len(kwargs.keys()):
-            filters = ['{0} = ?'.format(key) for key in kwargs.keys()]
-            params = tuple(kwargs.values())
+        filters = []
+        params = []
+        for key, value in kwargs.items():
+            if key in cls.filterable:   # This check should guard against SQL vulnerabilities
+                filters.append('{0} = ?'.format(key))
+                params.append(value)
+        if len(filters):
             query += ' WHERE ' + ' AND '.join(filters)
+        query += ';'
 
         # Run query and return results
         cursor = conn.cursor()
-        rows = cursor.execute(query, params)
-        return rows.fetchall()
+        return cursor.execute(
+                    query, tuple(params)
+                ).fetchall()
 
     @classmethod
     def fetch(cls, **kwargs):
@@ -120,9 +138,12 @@ class Model(object):
 
     @classmethod
     def exists(cls, name):
-        return 0 != len(cls._fetch(name=name))
+        cursor = conn.cursor()
+        row = cursor.execute('''SELECT EXISTS(SELECT 1 FROM models WHERE name = ?) AS 'exists';''', (name,)).fetchone()
+        return 0 != row['exists']
 
     def toDict(self):
+        # This will ignore any changes currently in memory...
         data = self._fetch(name=self.name)
         if len(data):
             return data[0]
@@ -130,15 +151,16 @@ class Model(object):
 
 
 
-
 class ModelCollection(object):
     '''
-        Helper class for doing bulk operations
+        Helper class for doing bulk operations.
+        This is mainly for future proofing.
     '''
     def __init__(self, models):
         self.collection = models
 
     def toDict(self):
         return [item.toDict() for item in self.collection]
+
 
 #

@@ -2,7 +2,7 @@
 <html>
     <head>
 
-        <!-- <title></title> -->
+        <title>CRUD</title>
 
         <meta charset=utf-8 />
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -54,6 +54,10 @@
                 cursor: pointer;
             }
 
+            .filters-container {
+                background-color: rgba(0,0,0,.075);
+            }
+
             body {
                 margin-top: 40px;
                 margin-bottom: 60px;
@@ -96,7 +100,8 @@
             </div>
 
             <!-- Filters -->
-            <div class="row bold table-row">
+            <div class="row bold table-row filters-container">
+                <!-- TODO Add filter icon -->
                 <div class="col-4">
                     <input type="text" class="form-control form-control-sm" placeholder="name" v-model="filters.name" @change="filterChange()">
                 </div>
@@ -138,7 +143,7 @@
                 <div class="col-2" v-model='model.update_at'>
                     <% model.update_at %>
                 </div>
-                <div class="col-1 btn-delete" @click="deleteModel(model)">
+                <div class="col-1 btn-delete" title="Delete" @click="deleteModel(model)">
                     <i class="fas fa-trash"></i>
                 </div>
             </div>
@@ -207,6 +212,7 @@
                         }).then(function(response) {
                             response.json().then(function(data) {
                                 if ('ok' == data.status) {
+                                    // TODO send a toast alart to notify user of changes.
                                     // window.location.reload();
                                     return;
                                 }

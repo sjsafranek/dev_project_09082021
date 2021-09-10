@@ -1,19 +1,15 @@
 #!/usr/bin/python3
 
 '''
-This will constitute as our "controller".
+Web server to accept incomming HTTP requests.
 
-I hand rolled this using the standard modules to avoid any dependency issues.
-It was nice learing more about the http.server module even though it is pretty
-low level (at least for Python).
-
-I typically use frameworks such as Django, Tornado or Flask for Python
-webs development. I also use Gorilla for GoLang web development.
+This will constitute as our "[C]ontroller" in the MVC architecture.
 '''
 
 import re
 import json
 import time
+import os.path
 from urllib.parse import urlparse
 from urllib.parse import parse_qs
 from urllib.parse import unquote
@@ -21,12 +17,10 @@ from http.server import HTTPServer
 from http.server import BaseHTTPRequestHandler
 from socketserver import ThreadingMixIn
 # from socketserver import ForkingMixIn     # This does not work on windows
-# import asyncio
-import threading
+# import asyncio        # I haven't used this enough. If I have time I might try to implement it.
+# import threading
 
 from models import Model
-from models import ModelCollection
-from views import ModelsView
 
 
 VERSION = '0.0.1'
@@ -38,71 +32,31 @@ START_TIME = time.time()
 # Basic server for handling requests
 class Controller(BaseHTTPRequestHandler):
 
+    ''' I hand rolled this using the standard modules to avoid any dependency issues.
+        It was nice learing more about the http.server module even though it is pretty
+        low level (at least for Python). Since the BaseHTTPRequestHandler class is
+        fairly low level, I have implemented several methods to mimic some basic
+        functionaly that would be present in 'out-of-the-box' frameworks.
+
+        I typically use frameworks such as Django, Tornado or Flask for Python
+        webs development. I like using Gorilla for GoLang web development.
+    '''
+
     def redirect(self, path):
+        ''' A simple helper method for implementing HTTP redirects '''
         self.send_response(302)
         self.send_header('Location', '/')
         self.end_headers()
 
-    @property
-    def body(self):
-        '''
-            We will read the request body once by caching the results for later.
-        '''
-        if hasattr(self, '_body'):
-            return self._body
-        content_len = int(self.headers.get('content-length', 0))
-        self._body = self.rfile.read(content_len)
-        return self._body
-
-    def json(self):
-        if 'application/json' == self.headers.get('content-type'):
-            if self.body:
-                try:
-                    return json.loads(self.body)
-                except:
-                    return {}
-        return {}
-
-    @property
-    def form(self):
-        if 'application/x-www-form-urlencoded' == self.headers.get('content-type'):
-            if self.body:
-                params = parse_qs(self.body)
-                return {
-                    k.decode(): v[0].decode() for k, v in params.items() if v is not None
-                }
-        return {}
-
-    @property
-    def args(self):
-        '''
-            This parses the url query string and only selects the fields of our model.
-            If we add new fields to our model they will automatically be added to this
-            lookup.
-        '''
-        params = parse_qs(urlparse(self.path).query)
-        return {
-            k: v[0] for k, v in params.items() if v is not None
-        }
-
-    @property
-    def params(self):
-        '''
-            This merges the query string arguments with the request body.
-            We will prioritize data sent within the request body.
-        '''
-        return {
-            **self.args,
-            **self.form,
-            **self.json().get('params', {})
-        }
-
     def send(self, content, content_type='text/plain', status=200):
+        ''' A helper method for sending the HTTP response '''
         self.send_response(status)
         self.send_header("Content-type", content_type)
         self.end_headers()
         self.wfile.write(bytes(content, "UTF-8"))
 
+    # The next few methods are just helpers to keep things clean
+    # within our application logic.
     def sendJSON(self, payload, status=200):
         self.send(json.dumps(payload), content_type='application/json', status=status)
 
@@ -124,7 +78,69 @@ class Controller(BaseHTTPRequestHandler):
             "data": kwargs
         }, kwargs.get('status', 200))
 
+    # This section contains methods to help get/collect parameters
+    # sent in the HTTP request.
+    @property
+    def body(self):
+        ''' According to the documentation the BaseHTTPRequestHandler.rfile attribute
+            is an io.BufferedIOBase.
+
+            I haven't explored this too far but I will go with the assumption that we
+            can only read from it once. To avoid any possible issues with multiple reads,
+            I will cache the results after the first read.
+        '''
+        if hasattr(self, '_body'):
+            return self._body
+        content_len = int(self.headers.get('content-length', 0))
+        self._body = self.rfile.read(content_len)
+        return self._body
+
+    def json(self):
+        ''' Parses JSON payloads contained in the request body '''
+        if 'application/json' == self.headers.get('content-type'):
+            if self.body:
+                try:
+                    return json.loads(self.body)
+                except:
+                    return {}
+        return {}
+
+    @property
+    def form(self):
+        ''' Parses forms contained in the request body '''
+        if 'application/x-www-form-urlencoded' == self.headers.get('content-type'):
+            if self.body:
+                params = parse_qs(self.body)
+                return {
+                    k.decode(): v[0].decode() for k, v in params.items() if v is not None
+                }
+        return {}
+
+    @property
+    def args(self):
+        ''' Parses url query string parameters '''
+        params = parse_qs(urlparse(self.path).query)
+        return {
+            k: v[0] for k, v in params.items() if v is not None
+        }
+
+    @property
+    def params(self):
+        ''' This merges parameters sent via different methods (JSON, form and query string).
+            We will prioritize data sent within the request body.
+        '''
+        return {
+            **self.args,
+            **self.form,
+            **self.json().get('params', {})
+        }
+
+    # These two methods are just helper functions for the application logic.
     def _getModelNameFromUrl(self):
+        ''' This extracts the 'name' parameter from the url.
+
+            Pretty clunky and room for improvement.
+        '''
         url = urlparse(self.path)
         if url.path.startswith('/api/v1/model/'):
             parts = url.path.replace('/api/v1/model/', '').split('/')
@@ -135,62 +151,39 @@ class Controller(BaseHTTPRequestHandler):
         return None
 
     def getModel(self):
+        ''' Fetches the Model object for the given 'name' supplied by the request. '''
         name = self._getModelNameFromUrl()
         if not name:
             name = self.params['name']
         models = Model.fetch(name=name)
         return models[0] if len(models) else None
 
+    # Here are the HTTP request handlers.
+    # This section contains the bulk for our application logic.
     def indexHandler(self):
-        view = ModelsView(ModelCollection(Model.fetch(**self.params)))
-        page = view.render()
-        return self.sendHTML(page)
+        ''' HTTP handler for our index path.
+
+            This technically our [V]iew in the MVC architecture.
+
+            Instead of using Python to generate raw HTML, I decided to push this job
+            to a front end framework called Vue (https://vuejs.org/v2/guide/index.html).
+            I felt this would better demonstrate some modern web development approaches.
+        '''
+        fpath = os.path.join('tmpl', 'page.html')
+        with open(fpath) as fh:
+            tmpl = fh.read()
+            data = [model.toDict() for model in Model.fetch(**self.params)]
+            page = tmpl.replace('{{models}}', json.dumps(data))
+            self.sendHTML(page)
 
     def do_HEAD(self):
         return
 
-    def do_GET(self):
-        url = urlparse(self.path)
-
-        if '/' == url.path:
-            return self.indexHandler()
-
-        elif '/ping' == url.path:
-            return self.sendAPIResponse(
-                            version=VERSION,
-                            start_time=START_TIME,
-                            up_time=time.time()-START_TIME
-                        )
-
-        elif '/api/v1/models' == url.path:
-            return self.sendAPIResponse(models=[
-                model.toDict() for model in Model.fetch(**self.params)
-            ])
-
-        elif re.match(r'^/api/v1/model/[^/]+$', url.path):
-            model = self.getModel()
-            if model:
-                return self.sendAPIResponse(model=model.toDict())
-
-        # elif re.match(r'^/model/[^/]+$', url.path):
-        #     model = self.getModel()
-        #     if model:
-        #         view = ModelsView(ModelCollection([model]))
-        #         page = view.render()
-        #         return self.sendHTML(page)
-
-        self.errorNotFound()
-
     def do_POST(self):
-        '''
-            I am a fan of the JSON-RPC type protocol but lets go with
-            a REST protocol for this project.
-
-            https://www.jsonrpc.org/specification
-        '''
-
+        ''' An HTTP handler for the [C]reate method in the CRUD application. '''
         url = urlparse(self.path)
 
+        # Handler redirects
         if '/' == url.path:
             return self.indexHandler()
 
@@ -211,9 +204,46 @@ class Controller(BaseHTTPRequestHandler):
 
         self.errorNotFound()
 
-    def do_PUT(self):
+    def do_GET(self):
+        ''' An HTTP handler for the [R]ead method in the CRUD application. '''
         url = urlparse(self.path)
 
+        # Handler redirects
+        if '/' == url.path:
+            return self.indexHandler()
+
+        elif '/ping' == url.path:
+            return self.sendAPIResponse(
+                            version=VERSION,
+                            start_time=START_TIME,
+                            up_time=time.time()-START_TIME
+                        )
+
+        # Debugging
+        elif '/api/v1/models' == url.path:
+            return self.sendAPIResponse(models=[
+                model.toDict() for model in Model.fetch(**self.params)
+            ])
+
+        elif re.match(r'^/api/v1/model/[^/]+$', url.path):
+            model = self.getModel()
+            if model:
+                return self.sendAPIResponse(model=model.toDict())
+
+        # elif re.match(r'^/model/[^/]+$', url.path):
+        #     model = self.getModel()
+        #     if model:
+        #         view = ModelsView(ModelCollection([model]))
+        #         page = view.render()
+        #         return self.sendHTML(page)
+
+        self.errorNotFound()
+
+    def do_PUT(self):
+        ''' An HTTP handler for the [U]pdate method in the CRUD application. '''
+        url = urlparse(self.path)
+
+        # Handler redirects
         if '/' == url.path:
             return self.indexHandler()
 
@@ -230,6 +260,7 @@ class Controller(BaseHTTPRequestHandler):
 
         elif re.match(r'^/model/[^/]+$', url.path):
             print(self.getModel())
+
         # elif '/update' == url.path:
         #     model = self.getModel()
         #     if model:
@@ -242,8 +273,10 @@ class Controller(BaseHTTPRequestHandler):
         self.errorNotFound()
 
     def do_DELETE(self):
+        ''' An HTTP handler for the [D]elete method in the CRUD application. '''
         url = urlparse(self.path)
 
+        # Handler redirects
         if '/' == url.path:
             return self.indexHandler()
 
@@ -261,12 +294,10 @@ class Controller(BaseHTTPRequestHandler):
 
 
 class ThreadingSimpleServer(ThreadingMixIn, HTTPServer):
-    '''
-        SQlite did not like the ThreadingMixIn because we only
-        have one connection to the in memory database.
+    ''' SQLite did not like the ThreadingMixIn because we only
+        have a single persistent connection to the database.
     '''
     pass
-
 
 
 # This is not supported for windows :(
@@ -282,7 +313,6 @@ class ThreadingSimpleServer(ThreadingMixIn, HTTPServer):
 
 # Listen and serve on specified host and port
 def start(host='localhost', port=8080):
-    # server = HTTPServer((host, port), Controller)
     # server = ForkingHTTPServer((host, port), Controller)
     server = HTTPServer((host, port), Controller)
     print("Server started http://%s:%s" % (host, port))
