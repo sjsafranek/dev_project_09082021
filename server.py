@@ -57,9 +57,8 @@ class Controller(BaseHTTPRequestHandler):
         self.send_header("Content-type", content_type)
         self.end_headers()
         self.wfile.write(bytes(content, "UTF-8"))
-        # try:
         self.wfile.flush()
-        # finally:
+        # print(dir(self))
         # self.finish()
 
     # The next few methods are just helpers to keep things clean
