@@ -96,9 +96,9 @@ if not _dbExists:
 
         # Generate an example dataset
         cursor = conn.cursor()
-        make_options = ['ford', 'subaru', 'toyota']
-        color_options = ['blue', 'red', 'silver', 'green', 'white', 'black']
-        status_options = ['driving', 'crashed', 'parked']
+        make_options = ['ford', 'subaru', 'honda', 'toyota', 'gm', 'mazda']
+        color_options = ['blue', 'red', 'silver', 'white', 'black']
+        status_options = ['fail'] * 10 + ['warn'] * 20 + ['pass'] * 70
 
         for i in range(37):
             make = random.choice(make_options)
