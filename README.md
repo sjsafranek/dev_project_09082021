@@ -18,6 +18,8 @@ it out using the following operating systems and versions:
 | pysqlite | 2.6.0     | 2.6.0      |
 | Python   | 3.7.3     | 3.9.7      |
 
+Instead of doing a simple 
+
 
 ## Usage
 
@@ -28,7 +30,12 @@ Server started http://localhost:8080
 
 In your preferred browser go to http://localhost:8080
 
-The script also accepts arguments from the command line.
+The script also accepts arguments from the command line:
 
-    - host (default localhost)
-    - port (default 8080)
+ - host (default localhost)
+ - port (default 8080)
+
+```bash
+$ python3 main.py -host 0.0.0.0 -port 8888
+Server started http://0.0.0.0:8888
+```

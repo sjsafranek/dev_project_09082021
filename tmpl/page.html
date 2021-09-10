@@ -21,19 +21,27 @@
         <!-- SweetAlert2 -->
         <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-        <!-- Vue -->
+        <!-- Vue.js -->
         <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
 
         <!-- Font Awesome -->
         <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css" integrity="sha384-AYmEC3Yw5cVb3ZcuHtOA93w35dYTsvhLPVnYs9eStHfGJvOvKxVfELGroGkvsg+p" crossorigin="anonymous"/>
 
+        <!-- D3.js -->
+        <script src="https://d3js.org/d3.v3.min.js"></script>
+
         <style>
+
+            body {
+                margin-top: 40px;
+                margin-bottom: 60px;
+            }
 
             #view {
                 font-size: .875rem;
             }
 
-            .bold {
+            .text-bold {
                 font-weight: 600;
             }
 
@@ -50,6 +58,7 @@
                 background-color: rgba(0,0,0,.075);
             }
 
+            .btn-copy,
             .btn-delete {
                 cursor: pointer;
             }
@@ -58,10 +67,56 @@
                 background-color: rgba(0,0,0,.075);
             }
 
-            body {
-                margin-top: 40px;
-                margin-bottom: 60px;
+            .table-body-container {
+                /* This doesn't seem to work on my version of FireFox. */
+                overflow-y: overlay;
+                max-height: 50em;
             }
+
+            .pulsate-warning-text {
+                -webkit-animation: pulsate 1s cubic-bezier(0.24, 0, 0.38, 1);
+                -webkit-animation-iteration-count: infinite;
+                animation: pulsate-warning-text 1s cubic-bezier(0.24, 0, 0.38, 1) infinite;
+                opacity: 0.5;
+            }
+
+            @-webkit-keyframes pulsate-warning-text {
+                0% {
+                    opacity: 0.5;
+                    color: black;
+                }
+                50% {
+                    opacity: 1.0;
+                    color: darkred;
+                }
+                100% {
+                    opacity: 0.5;
+                    color: black;
+                }
+            }
+
+
+            /* SVG Chart styling */
+
+            svg {
+            	width: 100%;
+            	/* height: 100%; */
+                height: 16em;
+            }
+
+            path.slice{
+            	stroke-width:2px;
+            }
+
+            polyline{
+            	opacity: .3;
+            	stroke: black;
+            	stroke-width: 2px;
+            	fill: none;
+            }
+
+
+
 
         </style>
 
@@ -76,20 +131,33 @@
             </div>
 
             <div class="row mb-4">
-                <!-- Here is an example of a form -->
-                <form action="/create" method='POST'>
-                    <strong>Create Model</strong>
-                    <div class="form-group col-2 mb-2">
-                        <label for='name'>Name: </label>
-                        <input class="form-control" type='text' id='name' name='name' placeholder="Name" aria-describedby="help">
-                        <small id="help" class="form-text text-muted">If a name for the model is not supplied a UUID will be generated.</small>
-                    </div>
-                    <button class='btn btn-sm btn-primary' type='submit'>Submit</button>
-                </form>
+                <div class="col-9 chart-container">
+                    <!-- The instructions 'technically' didn't say I needed to create two separate pages...
+                         I will use D3.js to automatically generate a pie chart to show the "status" values.
+                         It will automatically update as the user applies any filters.
+                    -->
+                    <svg id="chart">
+                    </svg>
+                </div>
+                <div class="col-3">
+                    <!-- Here is a basic example of an HTML form for the [C]reate method.
+                         Each of the CRUD methods should be supported for both forms and
+                         ajax/fetch requests.
+                    -->
+                    <form action="/create" method='POST'>
+                        <strong>Create Model</strong>
+                        <div class="form-group mb-2">
+                            <label for='name'>Name: </label>
+                            <input class="form-control" type='text' id='name' name='name' placeholder="Name" aria-describedby="help" required>
+                            <!-- <small id="help" class="form-text text-muted">If a name for the model is not supplied a UUID will be generated.</small> -->
+                        </div>
+                        <button class='btn btn-sm btn-primary float-end' type='submit'>Submit</button>
+                    </form>
+                </div>
             </div>
 
             <!-- Header -->
-            <div class="row bold table-row">
+            <div class="row text-bold table-header table-row">
                 <div class="col-4">name</div>
                 <div class="col-1">make</div>
                 <div class="col-1">color</div>
@@ -103,48 +171,60 @@
             <div class="row bold table-row filters-container">
                 <!-- TODO Add filter icon -->
                 <div class="col-4">
-                    <input type="text" class="form-control form-control-sm" placeholder="name" v-model="filters.name" @change="filterChange()">
+                    <input type="text" class="form-control form-control-sm" placeholder="name" title="filter" v-model="filters.name" @keyup="filterChange()">
                 </div>
                 <div class="col-1">
-                    <input type="text" class="form-control form-control-sm" placeholder="make" v-model="filters.make" @change="filterChange()">
+                    <input type="text" class="form-control form-control-sm" placeholder="make" title="filter" v-model="filters.make" @keyup="filterChange()">
                 </div>
                 <div class="col-1">
-                    <input type="text" class="form-control form-control-sm" placeholder="color" v-model="filters.color" @change="filterChange()">
+                    <input type="text" class="form-control form-control-sm" placeholder="color" title="filter" v-model="filters.color" @keyup="filterChange()">
                 </div>
                 <div class="col-1">
-                    <input type="text" class="form-control form-control-sm" placeholder="status" v-model="filters.status" @change="filterChange()">
+                    <input type="text" class="form-control form-control-sm" placeholder="status" title="filter" v-model="filters.status" @keyup="filterChange()">
                 </div>
                 <div class="col-2">
-                    <input type="text" class="form-control form-control-sm" placeholder="create_at" v-model="filters.create_at" @change="filterChange()">
+                    <input type="text" class="form-control form-control-sm" placeholder="create_at" title="filter" v-model="filters.create_at" @keyup="filterChange()">
                 </div>
                 <div class="col-2">
-                    <input type="text" class="form-control form-control-sm" placeholder="update_at" v-model="filters.update_at" @change="filterChange()">
+                    <input type="text" class="form-control form-control-sm" placeholder="update_at" title="filter" v-model="filters.update_at" @keyup="filterChange()">
                 </div>
                 <div class="col-1"></div>
             </div>
 
             <!-- Body -->
-            <div v-for="model in models" v-model='models' class="row table-row model-container" v-bind:id="model.name.replace(/ /g, '')">
-                <div class="col-4" v-model='model.name'>
-                    <% model.name %>
-                </div>
-                <div class="col-1" >
-                    <input type="text" class="form-control form-control-sm" v-model="model.make" placeholder="make" @change="updateModel(model)"/>
-                </div>
-                <div class="col-1" >
-                    <input type="text" class="form-control form-control-sm" v-model="model.color" placeholder="color" @change="updateModel(model)"/>
-                </div>
-                <div class="col-1" >
-                    <input type="text" class="form-control form-control-sm" v-model="model.status" placeholder="status" @change="updateModel(model)"/>
-                </div>
-                <div class="col-2" v-model='model.create_at'>
-                    <% model.create_at %>
-                </div>
-                <div class="col-2" v-model='model.update_at'>
-                    <% model.update_at %>
-                </div>
-                <div class="col-1 btn-delete" title="Delete" @click="deleteModel(model)">
-                    <i class="fas fa-trash"></i>
+            <div class="row table-body-container">
+                <div class="col">
+                    <!-- Vue will act as our templating engine. It will loop through the
+                         model objects and create a new row for our makeshift "table".
+                    -->
+                    <div v-for="model in models" v-model='models' class="row table-row model-container" v-bind:id="model.name.replace(/ /g, '')">
+                        <div class="col-4" v-model='model.name'>
+                            <% model.name %>
+                        </div>
+                        <div class="col-1" >
+                            <input type="text" class="form-control form-control-sm" v-model="model.make" placeholder="make" @change="updateModel(model)"/>
+                        </div>
+                        <div class="col-1" >
+                            <input type="text" class="form-control form-control-sm" v-model="model.color" placeholder="color" @change="updateModel(model)"/>
+                        </div>
+                        <div class="col-1" >
+                            <input type="text" class="form-control form-control-sm" v-model="model.status" placeholder="status" @change="updateModel(model)"/>
+                        </div>
+                        <div class="col-2" v-model='model.create_at'>
+                            <% model.create_at %>
+                        </div>
+                        <div class="col-2" v-model='model.update_at'>
+                            <% model.update_at %>
+                        </div>
+                        <div class="col-1 model-controls-container">
+                            <span class="me-1 btn-copy" title="Copy" @click="copyModel(model)">
+                                <i class="far fa-copy"></i>
+                            </span>
+                            <span class="me-1 btn-delete" title="Delete" @click="deleteModel(model)">
+                                <i class="fas fa-trash"></i>
+                            </span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -152,12 +232,170 @@
 
         <script>
 
+            // I would usually put these in separate JavaScript files.
+            // For this project I am just foinf "hand-wave" around it,
+            // because I don't want to setup a '/static' route on the
+            // server side.
+
+
+            // PieChart class to display 'status' values
+            // within selection.
+            var PieChart = function() {
+
+                // We can make this 'private' attributes.
+                let svg = d3.select("svg#chart")
+                    .append("g");
+
+                svg.append("g")
+                    .attr("class", "slices");
+
+                svg.append("g")
+                    .attr("class", "labels");
+
+                svg.append("g")
+                    .attr("class", "lines");
+
+                let width = 960/2,
+                    height = 450/2,
+                	radius = Math.min(width, height) / 2;
+
+                let pie = d3.layout.pie()
+                	.sort(null)
+                	.value(function(d) {
+                		return d.value;
+                	});
+
+                let arc = d3.svg.arc()
+                	.outerRadius(radius * 0.8)
+                	.innerRadius(radius * 0.4);
+
+                let outerArc = d3.svg.arc()
+                	.innerRadius(radius * 0.9)
+                	.outerRadius(radius * 0.9);
+
+                svg.attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
+
+                let key = function(d){ return d.data.label; };
+                let colorScale = d3.scale.category10();
+
+                // Function to update chart. D3 will trigger css transitions
+                // to nicely animate the chart during the update.
+                this.update = function(raw) {
+
+                    // Reformat data
+                    let values = d3.set(raw).values();
+
+                    let color = d3.scale.ordinal()
+                    	.domain(values)
+                        .range(values.map(function(d,i) {
+                            return colorScale(i);
+                        }));
+
+                    function formatData (){
+                    	let labels = color.domain();
+                    	return values.map(function(label){
+                    		return {
+                                label: label,
+                                value: raw.filter(function(d) {
+                                    return label == d;
+                                }).length
+                            }
+                    	});
+                    }
+
+                    let data = formatData(raw);
+
+
+                	// Build the pie chart slices
+                	let slice = svg.select(".slices").selectAll("path.slice")
+                        .data(pie(data), key);
+
+                	slice.enter()
+                		.insert("path")
+                		.style("fill", function(d) { return color(d.data.label); })
+                		.attr("class", "slice");
+
+                	slice.transition().duration(1000)
+                		.attrTween("d", function(d) {
+                			this._current = this._current || d;
+                			var interpolate = d3.interpolate(this._current, d);
+                			this._current = interpolate(0);
+                			return function(t) {
+                				return arc(interpolate(t));
+                			};
+                		})
+
+                	slice.exit().remove();
+
+
+                	// Add labels for 'status' values
+                	let text = svg.select(".labels").selectAll("text")
+                        .data(pie(data), key);
+
+                	text.enter()
+                		.append("text")
+                		.attr("dy", ".35em")
+                		.text(function(d) {
+                			return d.data.label;
+                		});
+
+                	function midAngle(d){
+                		return d.startAngle + (d.endAngle - d.startAngle)/2;
+                	}
+
+                	text.transition().duration(1000)
+                		.attrTween("transform", function(d) {
+                			this._current = this._current || d;
+                			var interpolate = d3.interpolate(this._current, d);
+                			this._current = interpolate(0);
+                			return function(t) {
+                				var d2 = interpolate(t);
+                				var pos = outerArc.centroid(d2);
+                				pos[0] = radius * (midAngle(d2) < Math.PI ? 1 : -1);
+                				return "translate("+ pos +")";
+                			};
+                		})
+                		.styleTween("text-anchor", function(d){
+                			this._current = this._current || d;
+                			var interpolate = d3.interpolate(this._current, d);
+                			this._current = interpolate(0);
+                			return function(t) {
+                				var d2 = interpolate(t);
+                				return midAngle(d2) < Math.PI ? "start":"end";
+                			};
+                		});
+
+                	text.exit().remove();
+
+
+                    // Draw line from label to slice
+                	var polyline = svg.select(".lines").selectAll("polyline")
+                		.data(pie(data), key);
+
+                	polyline.enter().append("polyline");
+
+                	polyline.transition().duration(1000)
+                		.attrTween("points", function(d){
+                			this._current = this._current || d;
+                			var interpolate = d3.interpolate(this._current, d);
+                			this._current = interpolate(0);
+                			return function(t) {
+                				var d2 = interpolate(t);
+                				var pos = outerArc.centroid(d2);
+                				pos[0] = radius * 0.95 * (midAngle(d2) < Math.PI ? 1 : -1);
+                				return [arc.centroid(d2), outerArc.centroid(d2), pos];
+                			};
+                		});
+
+                	polyline.exit().remove();
+                };
+
+            }
+
+
 
             // I am mainly using Vue to as a templating engine.
             // The added benefits is it will setup events and data bindings with the DOM.
-            // For the most part I will fall back to using HTML forms to similuate
-            // a basic CRUD application.
-
             var app = new Vue({
 
                 el: '#view',
@@ -176,17 +414,27 @@
                     }
                 },
 
+                mounted: function () {
+                    let self = this;
+
+                    // Lets setup the basic D3 chart to show the 'status' values.
+                    this.chart = new PieChart();
+                    this.chart.update(this._data.models.map(function(d) {
+                        return d.status;
+                    }));
+                },
+
                 methods: {
 
                     // Ultimately if I were to do this again I would make each
                     // "Model" object a Vue component. That way I could have the
-                    // parent (app) send an event to its children.
+                    // parent (app) send Events to its children.
                     // https://vuejs.org/v2/guide/components.html
                     filterChange: function(model) {
                         let self = this;
                         // Because we are doing many DOM manipluations I will run
-                        // this in a callback function via the Array.map function.
-                        this._data.models.map(function(d) {
+                        // this in a callback function via the Array.map/filter function.
+                        let models = this._data.models.filter(function(d) {
                             let _show = true;
                             for (let field in self._data.filters) {
                                 let value = self._data.filters[field];
@@ -199,10 +447,28 @@
                             }
                             let $elem = $('#'+d.name.replace(/ /g, ''));
                             _show ? $elem.show() : $elem.hide();
+                            return _show;
                         });
+
+                        // Update SVG chart to display filtered 'status' values.
+                        this.chart.update(
+                            models.map(function(d) {
+                                return d.status;
+                            })
+                        );
+                    },
+
+                    copyModel: function(model) {
+                        console.log(model);
+                        debugger;
                     },
 
                     updateModel: function(model) {
+                        // Since these are simple edits we are going to fire off
+                        // an API request to make these changes on the fly.
+                        // It would be nicer to have a websocket to dynamically fire
+                        // these events to the server side.
+                        let self = this;
                         fetch('/api/v1/model/' + model.name, {
                             method: 'PUT',
                             headers: {
@@ -212,9 +478,8 @@
                         }).then(function(response) {
                             response.json().then(function(data) {
                                 if ('ok' == data.status) {
-                                    // TODO send a toast alart to notify user of changes.
-                                    // window.location.reload();
-                                    return;
+                                    // 'Trigger' a filter change.
+                                    return self.filterChange();
                                 }
                                 Swal.fire({
                                     icon: 'error',
@@ -231,33 +496,30 @@
                         Swal.fire({
                             title: 'Are you sure?',
                             icon: 'warning',
-                            text: 'This cannot be undone',
+                            html: `
+                                <div>Do you wish to delete ${model.name}.</div>
+                                <div class="pulsate-warning-text text-bold">This cannot be undone.</div>
+                            `,
                             showCloseButton: true,
                             showCancelButton: true,
-                            // focusConfirm: false,     // <-- Turning this off to test
+                            focusConfirm: false,
                             showLoaderOnConfirm: true
                         }).then(function(result) {
                             if (result.isConfirmed) {
                                 fetch('/api/v1/model/' + model.name, {
-                                // fetch('/model/' + model.name, {
                                     method: 'DELETE'
                                 }).then(function(response) {
                                     response.json().then(function(data) {
                                         if ('ok' == data.status) {
-                                            // Option 1
-                                            // We can just reload the page to symulate more of a "form"
-                                            // behavior to get the changes.
-                                            window.location.reload();
-
-                                        /*
-                                            // Option 2
                                             // Vue does a great job of binding our data to the DOM.
                                             // By removing the model from our list Vue will automatically
                                             // detect the changes and update the DOM dynamically.
-                                            return self._data.models = self._data.models.filter(function(d) {
+                                            self._data.models = self._data.models.filter(function(d) {
                                                 return d.name != model.name;
                                             });
-                                        */
+
+                                            // 'Trigger' a filter change.
+                                            return self.filterChange();
                                         }
 
                                         Swal.fire({
@@ -273,6 +535,7 @@
 
                 }
             });
+
 
         </script>
 

@@ -32,76 +32,78 @@ from conf import DB_FILE
 # to avoid any changes on the file system.
 _dbExists = os.path.exists(DB_FILE)
 
-# Open database connection
-conn = sqlite3.connect(DB_FILE)
 
-# Enable dict factory for sqlite3.
-# I would typically use the PostGreSQL JSON functionality.
-def dict_factory(cursor, row):
-    d = {}
-    for idx, col in enumerate(cursor.description):
-        d[col[0]] = row[idx]
-    return d
+# Open new database connection
+def connect():
+    # This is technically dangerous because with multiple
+    # writers SQLite3 could lock. I am going to ignore this
+    # consern because the likelyhood of this happening is
+    # low.
+    conn = sqlite3.connect(DB_FILE)
 
-conn.row_factory = dict_factory
+    # Enable dict factory for sqlite3.
+    # I would typically use the PostGreSQL JSON functionality.
+    def dict_factory(cursor, row):
+        d = {}
+        for idx, col in enumerate(cursor.description):
+            d[col[0]] = row[idx]
+        return d
 
-# Set journal mode to WAL.
-# source: https://charlesleifer.com/blog/going-fast-with-sqlite-and-python/
-# https://sqlite.org/wal.html
-# This isn't really needed for this project, but it is
-# helpful for high concurrency applications.
-conn.execute('pragma journal_mode=wal')
+    conn.row_factory = dict_factory
 
+    # Set journal mode to WAL.
+    # source: https://charlesleifer.com/blog/going-fast-with-sqlite-and-python/
+    # https://sqlite.org/wal.html
+    # This isn't really needed for this project, but it is
+    # helpful for high concurrency applications.
+    conn.execute('pragma journal_mode=wal')
 
-#
-def init_db():
+    # Return database connection
+    return conn
 
-    # Get cursor
-    cursor = conn.cursor()
-
-    # Create tables
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS models (
-            name            TEXT PRIMARY KEY,
-            make            TEXT,
-            color           TEXT,
-            status          TEXT,
-            create_at       DATETIME DEFAULT CURRENT_TIMESTAMP,
-            update_at       DATETIME DEFAULT CURRENT_TIMESTAMP
-        );
-    ''')
-
-    cursor.execute('''
-        CREATE TRIGGER IF NOT EXISTS on_models_update
-           AFTER UPDATE OF make, color, status ON models
-        BEGIN
-            UPDATE models SET update_at = CURRENT_TIMESTAMP WHERE name = NEW.name;
-        END;
-    ''')
-
-    # Commit changes
-    conn.commit()
-
-
-def load_dummy_data():
-
-    # Get cursor
-    cursor = conn.cursor()
-    make_options = ['ford', 'subaru', 'toyota']
-    color_options = ['blue', 'red', 'silver', 'green', 'white', 'black']
-    status_options = ['driving', 'crashed', 'parked']
-
-    for i in range(37):
-        make = random.choice(make_options)
-        color = random.choice(color_options)
-        status = random.choice(status_options)
-        cursor.execute('''INSERT INTO models (name, make, color, status) VALUES (?, ?, ?, ?)''', ( str(uuid.uuid4()), make, color, status, ) )
-
-    # Commit database changes
-    conn.commit()
 
 
 # Initialize database if it does not yet exist
 if not _dbExists:
-    init_db()
-    load_dummy_data()
+
+    # The 'with' clause will automatically call the close
+    # method on the database connection.
+    with connect() as conn:
+
+        # Create basic tables and triggers
+        cursor = conn.cursor()
+
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS models (
+                name            TEXT PRIMARY KEY,
+                make            TEXT,
+                color           TEXT,
+                status          TEXT,
+                create_at       DATETIME DEFAULT CURRENT_TIMESTAMP,
+                update_at       DATETIME DEFAULT CURRENT_TIMESTAMP
+            );
+        ''')
+
+        cursor.execute('''
+            CREATE TRIGGER IF NOT EXISTS on_models_update
+               AFTER UPDATE OF make, color, status ON models
+            BEGIN
+                UPDATE models SET update_at = CURRENT_TIMESTAMP WHERE name = NEW.name;
+            END;
+        ''')
+
+        conn.commit()
+
+        # Generate an example dataset
+        cursor = conn.cursor()
+        make_options = ['ford', 'subaru', 'toyota']
+        color_options = ['blue', 'red', 'silver', 'green', 'white', 'black']
+        status_options = ['driving', 'crashed', 'parked']
+
+        for i in range(37):
+            make = random.choice(make_options)
+            color = random.choice(color_options)
+            status = random.choice(status_options)
+            cursor.execute('''INSERT INTO models (name, make, color, status) VALUES (?, ?, ?, ?)''', ( str(uuid.uuid4()), make, color, status, ) )
+
+        conn.commit()

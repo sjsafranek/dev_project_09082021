@@ -8,10 +8,8 @@ This is our "[M]odel" in the MVC architecture.
 
 import uuid
 
+import database
 
-# We are just going to use a single database
-# connection for this project.
-from database import conn
 
 
 class Model(object):
@@ -92,23 +90,25 @@ class Model(object):
             self._data['name'] = str(uuid.uuid4())
 
         # Get cursor
-        cursor = conn.cursor()
+        with database.connect() as conn:
+            cursor = conn.cursor()
 
-        # Determine if this is an INSERT or UPDATE.
-        # Always use parameter substitution to prevent SQL injection.
-        args = (self.make, self.color, self.status, self.name, )
-        if self.exists(name=self.name):
-            cursor.execute('''UPDATE models SET make = ?, color = ?, status = ? WHERE name = ?;''', args)
-        else:
-            cursor.execute('''INSERT INTO models (make, color, status, name) VALUES (?, ?, ?, ?);''', args)
+            # Determine if this is an INSERT or UPDATE.
+            # Always use parameter substitution to prevent SQL injection.
+            args = (self.make, self.color, self.status, self.name, )
+            if self.exists(name=self.name):
+                cursor.execute('''UPDATE models SET make = ?, color = ?, status = ? WHERE name = ?;''', args)
+            else:
+                cursor.execute('''INSERT INTO models (make, color, status, name) VALUES (?, ?, ?, ?);''', args)
 
-        # Commit changes
-        conn.commit()
+            # Commit changes
+            conn.commit()
 
     def delete(self):
-        cursor = conn.cursor()
-        cursor.execute('''DELETE FROM models WHERE name = ?;''', (self.name,))
-        conn.commit()
+        with database.connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''DELETE FROM models WHERE name = ?;''', (self.name,))
+            conn.commit()
 
     @classmethod
     def _fetch(cls, **kwargs):
@@ -117,7 +117,8 @@ class Model(object):
         filters = []
         params = []
         for key, value in kwargs.items():
-            if key in cls.filterable:   # This check should guard against SQL vulnerabilities
+            # This check should guard against SQL vulnerabilities.
+            if key in cls.filterable:
                 filters.append('{0} = ?'.format(key))
                 params.append(value)
         if len(filters):
@@ -125,10 +126,11 @@ class Model(object):
         query += ';'
 
         # Run query and return results
-        cursor = conn.cursor()
-        return cursor.execute(
-                    query, tuple(params)
-                ).fetchall()
+        with database.connect() as conn:
+            cursor = conn.cursor()
+            return cursor.execute(
+                        query, tuple(params)
+                    ).fetchall()
 
     @classmethod
     def fetch(cls, **kwargs):
@@ -138,9 +140,10 @@ class Model(object):
 
     @classmethod
     def exists(cls, name):
-        cursor = conn.cursor()
-        row = cursor.execute('''SELECT EXISTS(SELECT 1 FROM models WHERE name = ?) AS 'exists';''', (name,)).fetchone()
-        return 0 != row['exists']
+        with database.connect() as conn:
+            cursor = conn.cursor()
+            row = cursor.execute('''SELECT EXISTS(SELECT 1 FROM models WHERE name = ?) AS 'exists';''', (name,)).fetchone()
+            return 0 != row['exists']
 
     def toDict(self):
         # This will ignore any changes currently in memory...

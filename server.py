@@ -17,8 +17,7 @@ from http.server import HTTPServer
 from http.server import BaseHTTPRequestHandler
 from socketserver import ThreadingMixIn
 # from socketserver import ForkingMixIn     # This does not work on windows
-# import asyncio        # I haven't used this enough. If I have time I might try to implement it.
-# import threading
+# import asyncio        # I haven't used this enough. If I have time I might try to utilize it.
 
 from models import Model
 
@@ -167,7 +166,8 @@ class Controller(BaseHTTPRequestHandler):
 
             Instead of using Python to generate raw HTML, I decided to push this job
             to a front end framework called Vue (https://vuejs.org/v2/guide/index.html).
-            I felt this would better demonstrate some modern web development approaches.
+            I felt this would better demonstrate some modern web development approaches
+            as well as my full stack development capabilities.
         '''
         fpath = os.path.join('tmpl', 'page.html')
         with open(fpath) as fh:
@@ -183,16 +183,17 @@ class Controller(BaseHTTPRequestHandler):
         ''' An HTTP handler for the [C]reate method in the CRUD application. '''
         url = urlparse(self.path)
 
-        # Handler redirects
+        # Handle redirects
         if '/' == url.path:
             return self.indexHandler()
 
         elif url.path in ['/api/v1/model', '/create']:
-            # Create new model if one does not exist by that 'name'.
+            # Check to see if a Model with the supplied name exists.
+            # If one doesn't, create a new Model object.
             name = self.params.get('name')
             if name:
                 if Model.exists(name):
-                    return self.errorMethodBadRequest('Model already exists')
+                    return self.errorMethodBadRequest('Model already exists: {0}'.format(name))
             model = Model(name=name)
             model.save()
 
@@ -208,10 +209,11 @@ class Controller(BaseHTTPRequestHandler):
         ''' An HTTP handler for the [R]ead method in the CRUD application. '''
         url = urlparse(self.path)
 
-        # Handler redirects
+        # Handle redirects
         if '/' == url.path:
             return self.indexHandler()
 
+        # It's always nice to include a route for health checks.
         elif '/ping' == url.path:
             return self.sendAPIResponse(
                             version=VERSION,
@@ -219,7 +221,7 @@ class Controller(BaseHTTPRequestHandler):
                             up_time=time.time()-START_TIME
                         )
 
-        # Debugging
+        # Basic API endpoints for testing
         elif '/api/v1/models' == url.path:
             return self.sendAPIResponse(models=[
                 model.toDict() for model in Model.fetch(**self.params)
@@ -230,24 +232,19 @@ class Controller(BaseHTTPRequestHandler):
             if model:
                 return self.sendAPIResponse(model=model.toDict())
 
-        # elif re.match(r'^/model/[^/]+$', url.path):
-        #     model = self.getModel()
-        #     if model:
-        #         view = ModelsView(ModelCollection([model]))
-        #         page = view.render()
-        #         return self.sendHTML(page)
-
         self.errorNotFound()
 
     def do_PUT(self):
         ''' An HTTP handler for the [U]pdate method in the CRUD application. '''
         url = urlparse(self.path)
 
-        # Handler redirects
+        _isApiRequest = re.match(r'^/api/v1/model/[^/]+$', url.path)
+
+        # Handle redirects
         if '/' == url.path:
             return self.indexHandler()
 
-        elif re.match(r'^/api/v1/model/[^/]+$', url.path):
+        elif _isApiRequest or re.match(r'^/model/[^/]+$', url.path):
             model = self.getModel()
             if model:
                 # Update model with new values. Default to existing value.
@@ -256,19 +253,12 @@ class Controller(BaseHTTPRequestHandler):
                 model.make = params.get('make', model.make)
                 model.status = params.get('status', model.status)
                 model.save()
-                return self.sendAPIResponse(model=model.toDict())
 
-        elif re.match(r'^/model/[^/]+$', url.path):
-            print(self.getModel())
-
-        # elif '/update' == url.path:
-        #     model = self.getModel()
-        #     if model:
-        #         model.color = params.get('color', model.color)
-        #         model.make = params.get('make', model.make)
-        #         model.status = params.get('status', model.status)
-        #         model.save()
-        #         return self.redirect('/')
+                # Depending on endpoint return api response or redirect.
+                if _isApiRequest:
+                    return self.sendAPIResponse(model=model.toDict())
+                else:
+                    return self.redirect('/')
 
         self.errorNotFound()
 
@@ -276,7 +266,7 @@ class Controller(BaseHTTPRequestHandler):
         ''' An HTTP handler for the [D]elete method in the CRUD application. '''
         url = urlparse(self.path)
 
-        # Handler redirects
+        # Handle redirects
         if '/' == url.path:
             return self.indexHandler()
 
@@ -296,11 +286,14 @@ class Controller(BaseHTTPRequestHandler):
 class ThreadingSimpleServer(ThreadingMixIn, HTTPServer):
     ''' SQLite did not like the ThreadingMixIn because we only
         have a single persistent connection to the database.
+
+        Had to start using the ThreadingMixIn because the HTTPServer
+        would block when I was using multiple browser tabs.
     '''
     pass
 
 
-# This is not supported for windows :(
+# This is not supported for windows... sad day :(
 # class ForkingHTTPServer(ForkingMixIn, HTTPServer):
 #     '''
 #         I was seeing that the HTTPServer was hanging on multiple
@@ -314,7 +307,8 @@ class ThreadingSimpleServer(ThreadingMixIn, HTTPServer):
 # Listen and serve on specified host and port
 def start(host='localhost', port=8080):
     # server = ForkingHTTPServer((host, port), Controller)
-    server = HTTPServer((host, port), Controller)
+    # server = HTTPServer((host, port), Controller)
+    server = ThreadingSimpleServer((host, port), Controller)
     print("Server started http://%s:%s" % (host, port))
 
     try:
