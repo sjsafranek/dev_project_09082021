@@ -430,6 +430,9 @@
                 				var d2 = interpolate(t);
                 				return midAngle(d2) < Math.PI ? "start":"end";
                 			};
+                		})
+                        .text(function(d) {
+                            return `${d.data.value} ${d.data.label}`;
                 		});
 
                 	text.exit().remove();
@@ -559,6 +562,8 @@
                             );
                         },
 
+                        // I read the "copy/edit" item as coping an individual model object,
+                        // not coping the entire data set (all model objects).
                         copyModel: function(old_model) {
                             let self = this;
                             Swal.fire({
@@ -605,7 +610,6 @@
                                     });
                                 },
                                 preConfirm: function() {
-
                                     // Return Promise
                                     return fetch('/api/v1/model', {
                                         method: 'POST',
@@ -629,13 +633,13 @@
                                     }).catch(function(error) {
                                         Swal.showValidationMessage(`Request failed: ${error}`);
                                     });
-
                                 }
                             }).then(function(result) {
                                 if (result.isConfirmed) {
                                     let new_model = result.value.data.model;
                                     self._data.models.push(result.value.data.model);
-                                    // Allow Vue to add element to DOM before scrolling to view
+                                    // Allow Vue to add element to DOM before scrolling to view.
+                                    // This is a little hacky but it works.
                                     setTimeout(function() {
                                         self.getRowByModelName(new_model)[0]
                                             .scrollIntoView({
@@ -647,10 +651,14 @@
                             });
                         },
 
-                        // Since these are simple edits we are going to fire off
-                        // an API request to make these changes on the fly.
-                        // It would be nicer to have a websocket to dynamically fire
-                        // these events to the server side.
+                        /*
+                            Since these are simple edits we are going to fire off an API request to make
+                            these changes on the fly. Since this is attached to a 'change' event and not
+                            a 'keypress' event, I don't anticipate a high volume of requests.
+
+                            This also probably doesn't conform to the exact spefications for the "update/edit",
+                            requirement.
+                        */
                         updateModel: function(model) {
 
                             // Sanitize empty string values.
@@ -663,6 +671,8 @@
                             }
 
                             // Send api call via browsers fetch functionaly.
+                            // It would be nicer to have a websocket to dynamically fire
+                            // these events to the server side.
                             let self = this;
                             fetch('/api/v1/model/' + model.name, {
                                 method: 'PUT',
@@ -677,8 +687,8 @@
                                         self.filterChange() : self.showError(data.error.message);
                                 });
                             }).catch(function(error) {
-                                // NOTE: Ideally, I would rollback the user update to
-                                // the previous value...
+                                // NOTE: Ideally, I would "rollback" the user update and restore
+                                // it to the previous value...
                                 self.showError('Unable to communicate with server');
                             });
                         },
@@ -698,27 +708,31 @@
                                 showCloseButton: true,
                                 showCancelButton: true,
                                 focusConfirm: false,
-                                showLoaderOnConfirm: true
-                            }).then(function(result) {
-                                if (result.isConfirmed) {
-                                    fetch('/api/v1/model/' + model.name, {
+                                showLoaderOnConfirm: true,
+                                // Here is a nice example of a Promise chain
+                                preConfirm: function() {
+                                    return fetch('/api/v1/model/' + model.name, {
                                         method: 'DELETE'
                                     }).then(function(response) {
-                                        response.json().then(function(data) {
-                                            if ('ok' == data.status) {
-                                                // Vue does a great job of binding our data to the DOM.
-                                                // By removing the model from our list Vue will automatically
-                                                // detect the changes and update the DOM dynamically.
-                                                self._data.models = self._data.models.filter(function(d) {
-                                                    return d.name != model.name;
-                                                });
-
-                                                // 'Trigger' a filter change.
-                                                return self.filterChange();
-                                            }
-                                            self.showError(data.error.message);
-                                        });
+                                        return response.json();
+                                    }).catch(function(error) {
+                                        Swal.showValidationMessage(`Request failed: ${error}`);
                                     });
+                                }
+                            }).then(function(result) {
+                                if (result.isConfirmed) {
+                                    if ('ok' == result.value.status) {
+                                        // Vue does a great job of binding our data to the DOM.
+                                        // By removing the model from our list Vue will automatically
+                                        // detect the changes and update the DOM dynamically.
+                                        self._data.models = self._data.models.filter(function(d) {
+                                            return d.name != model.name;
+                                        });
+
+                                        // 'Trigger' a filter change.
+                                        return self.filterChange();
+                                    }
+                                    self.showError(data.error.message);
                                 }
                             }).catch(function(error) {
                                 self.showError('Unable to communicate with server');
