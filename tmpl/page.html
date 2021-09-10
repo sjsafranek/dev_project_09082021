@@ -150,6 +150,9 @@
 
             // I am mainly using Vue to as a templating engine.
             // The added benefits is it will setup events and data bindings with the DOM.
+            // For the most part I will fall back to using HTML forms to similuate
+            // a basic CRUD application.
+
             var app = new Vue({
 
                 el: '#view',
@@ -170,8 +173,14 @@
 
                 methods: {
 
+                    // Ultimately if I were to do this again I would make each
+                    // "Model" object a Vue component. That way I could have the
+                    // parent (app) send an event to its children.
+                    // https://vuejs.org/v2/guide/components.html
                     filterChange: function(model) {
                         let self = this;
+                        // Because we are doing many DOM manipluations I will run
+                        // this in a callback function via the Array.map function.
                         this._data.models.map(function(d) {
                             let _show = true;
                             for (let field in self._data.filters) {
@@ -189,7 +198,6 @@
                     },
 
                     updateModel: function(model) {
-                        // It would be nicer to use websockets for stuff like this.
                         fetch('/api/v1/model/' + model.name, {
                             method: 'PUT',
                             headers: {
@@ -199,7 +207,7 @@
                         }).then(function(response) {
                             response.json().then(function(data) {
                                 if ('ok' == data.status) {
-                                    window.location.reload();
+                                    // window.location.reload();
                                     return;
                                 }
                                 Swal.fire({
