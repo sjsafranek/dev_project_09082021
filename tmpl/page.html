@@ -266,6 +266,9 @@
                         <div class="col-4" v-model='model.name'>
                             <% model.name %>
                         </div>
+                        <!-- I thought about adding an icon to be able to select which column
+                             to use for the chart visualization.
+                        -->
                         <div class="col-1" >
                             <input type="text" class="form-control form-control-sm" v-model="model.make" placeholder="make" @change="updateModel(model)" @mouseover="toggleUpdate" @mouseout="toggleUpdate"/>
                         </div>
