@@ -19,7 +19,7 @@ Here are some other SQL examples on my github:
     - https://github.com/sjsafranek/find5/blob/c8d5bbbcfb4b33f420a83f07025bad9727474ce3/finddb_schema/base_schema/create_users_table.sql#L2
 '''
 
-import uuid
+# import uuid
 import random
 import os.path
 import sqlite3
@@ -72,14 +72,17 @@ if not _dbExists:
         # Create basic tables and triggers
         cursor = conn.cursor()
 
+        # SQLite3 doesn't have a UUID function so we will use a custom one.
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS models (
-                name            TEXT PRIMARY KEY,
+                id              DEFAULT (lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6)))),
+                name            TEXT UNIQUE,
                 make            TEXT,
                 color           TEXT,
                 status          TEXT,
                 create_at       DATETIME DEFAULT CURRENT_TIMESTAMP,
-                update_at       DATETIME DEFAULT CURRENT_TIMESTAMP
+                update_at       DATETIME DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY ("id")
             );
         ''')
 
@@ -100,11 +103,11 @@ if not _dbExists:
         status_options = ['fail'] * 10 + ['warn'] * 20 + ['pass'] * 70
 
         for i in range(37):
+            name = 'thing_{0}'.format(i)
             make = random.choice(make_options)
             color = random.choice(color_options)
             status = random.choice(status_options)
             cursor.execute(
-                '''INSERT INTO models (name, make, color, status) VALUES (?, ?, ?, ?)''', (str(
-                    uuid.uuid4()), make, color, status, ))
+                '''INSERT INTO models (name, make, color, status) VALUES (?, ?, ?, ?)''', (name, make, color, status, ))
 
         conn.commit()

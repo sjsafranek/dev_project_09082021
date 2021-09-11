@@ -159,6 +159,21 @@
             }
 
 
+
+
+            .show {
+                opacity: 1;
+                height: auto;
+                transition: .3s all ease;
+            }
+
+            .hide {
+                opacity: 0;
+                height: 0;
+                transition: .3s all ease;
+            }
+
+
         </style>
 
     </head>
@@ -173,6 +188,7 @@
                     <span class="label-read">R</span>
                     <span class="label-update">U</span>
                     <span class="label-delete">D</span>
+                    y
                 </h4>
             </div>
 
@@ -204,10 +220,10 @@
 
             <!-- Header -->
             <div class="row text-bold table-header table-row">
-                <div class="col-4">name</div>
-                <div class="col-1">make</div>
-                <div class="col-1">color</div>
-                <div class="col-1">status</div>
+                <div class="col-1">name</div>
+                <div class="col-2">make</div>
+                <div class="col-2">color</div>
+                <div class="col-2">status</div>
                 <div class="col-2">create_at</div>
                 <div class="col-2">update_at</div>
                 <div class="col-1"></div>
@@ -216,7 +232,7 @@
             <!-- Filters -->
             <div class="row bold table-row filters-container">
                 <!-- TODO Add filter icon -->
-                <div class="col-4">
+                <div class="col-1">
                     <div class="input-group">
                         <!-- <span class="input-group-text"> -->
                             <!-- <i class="fas fa-filter"></i> -->
@@ -224,43 +240,28 @@
                         <input type="text" class="form-control form-control-sm" placeholder="name" title="filter" v-model="filters.name" @keyup="filterChange()">
                     </div>
                 </div>
-                <div class="col-1">
+                <div class="col-2">
                     <div class="input-group">
-                        <!-- <span class="input-group-text"> -->
-                            <!-- <i class="fas fa-filter"></i> -->
-                        <!-- </span> -->
                         <input type="text" class="form-control form-control-sm" placeholder="make" title="filter" v-model="filters.make" @keyup="filterChange()">
                     </div>
                 </div>
-                <div class="col-1">
+                <div class="col-2">
                     <div class="input-group">
-                        <!-- <span class="input-group-text"> -->
-                            <!-- <i class="fas fa-filter"></i> -->
-                        <!-- </span> -->
                         <input type="text" class="form-control form-control-sm" placeholder="color" title="filter" v-model="filters.color" @keyup="filterChange()">
                     </div>
                 </div>
-                <div class="col-1">
+                <div class="col-2">
                     <div class="input-group">
-                        <!-- <span class="input-group-text"> -->
-                            <!-- <i class="fas fa-filter"></i> -->
-                        <!-- </span> -->
                         <input type="text" class="form-control form-control-sm" placeholder="status" title="filter" v-model="filters.status" @keyup="filterChange()">
                     </div>
                 </div>
                 <div class="col-2">
                     <div class="input-group">
-                        <!-- <span class="input-group-text"> -->
-                            <!-- <i class="fas fa-filter"></i> -->
-                        <!-- </span> -->
                         <input type="text" class="form-control form-control-sm" placeholder="create_at" title="filter" v-model="filters.create_at" @keyup="filterChange()">
                     </div>
                 </div>
                 <div class="col-2">
                     <div class="input-group">
-                        <!-- <span class="input-group-text"> -->
-                            <!-- <i class="fas fa-filter"></i> -->
-                        <!-- </span> -->
                         <input type="text" class="form-control form-control-sm" placeholder="update_at" title="filter" v-model="filters.update_at" @keyup="filterChange()">
                     </div>
                 </div>
@@ -273,20 +274,20 @@
                     <!-- Vue will act as our templating engine. It will loop through the
                          model objects and create a new row for our makeshift "table".
                     -->
-                    <div v-for="model in models" v-model='models' class="row table-row model-container" v-bind:id="model.name.replace(/ /g, '')" @mouseover="toggleRead" @mouseout="toggleRead">
-                        <div class="col-4" v-model='model.name'>
+                    <div v-for="model in models" v-model='models' class="row table-row model-container" v-bind:id="model.id" @mouseover="toggleRead" @mouseout="toggleRead">
+                        <div class="col-1" v-model='model.name'>
                             <% model.name %>
                         </div>
                         <!-- I thought about adding an icon to be able to select which column
                              to use for the chart visualization.
                         -->
-                        <div class="col-1" >
+                        <div class="col-2" >
                             <input type="text" class="form-control form-control-sm" v-model="model.make" placeholder="make" @change="updateModel(model)" @mouseover="toggleUpdate" @mouseout="toggleUpdate"/>
                         </div>
-                        <div class="col-1" >
+                        <div class="col-2" >
                             <input type="text" class="form-control form-control-sm" v-model="model.color" placeholder="color" @change="updateModel(model)" @mouseover="toggleUpdate" @mouseout="toggleUpdate"/>
                         </div>
-                        <div class="col-1" >
+                        <div class="col-2" >
                             <input type="text" class="form-control form-control-sm" v-model="model.status" placeholder="status" @change="updateModel(model)" @mouseover="toggleUpdate" @mouseout="toggleUpdate"/>
                         </div>
                         <div class="col-2" v-model='model.create_at'>
@@ -434,7 +435,7 @@
                 				return "translate("+ pos +")";
                 			};
                 		})
-                		.styleTween("text-anchor", function(d){
+                		.styleTween("text-anchor", function(d) {
                 			this._current = this._current || d;
                 			var interpolate = d3.interpolate(this._current, d);
                 			this._current = interpolate(0);
@@ -475,13 +476,6 @@
             }
 
 
-            // Had to add this to cleanup funky characters lol
-            function sanitizeString(str){
-                str = str.replace(/[^a-z0-9áéíóúñü \.,_-]/gim,"");
-                return str.trim();
-            }
-
-
             // Lets throw in some Vanilla JS for old times sake.
             document.addEventListener("DOMContentLoaded", function() {
 
@@ -496,6 +490,7 @@
                     data: {
                         models: {{models}},
                         filters: {
+                            id: null,
                             name: null,
                             make: null,
                             color: null,
@@ -541,8 +536,8 @@
                             });
                         },
 
-                        getRowByModelName: function(model) {
-                            return $('#'+model.name.replace(/ /g, ''));
+                        getRowByModelID: function(model) {
+                            return $('#'+model.id.replace(/ /g, ''));
                         },
 
                         // Ultimately if I were to do this again I would make each
@@ -567,8 +562,9 @@
                                 }
                                 // let $elem = $('#'+d.name.replace(/ /g, ''));
                                 // _show ? $elem.show() : $elem.hide();
-                                let $elem = self.getRowByModelName(d);
-                                _show ? $elem.fadeIn() : $elem.fadeOut();
+                                let $elem = self.getRowByModelID(d);
+                                // _show ? $elem.fadeIn() : $elem.fadeOut();
+                                _show ? $elem.addClass('show').removeClass('hide') : $elem.addClass('hide').removeClass('show');                
                                 return _show;
                             });
 
@@ -640,10 +636,10 @@
                                         body: JSON.stringify({
                                             "method": "create_model",
                                             "params": {
-                                                name: sanitizeString(Swal.getPopup().querySelector('#name').value),
-                                                make: sanitizeString(Swal.getPopup().querySelector('#make').value),
-                                                color: sanitizeString(Swal.getPopup().querySelector('#color').value),
-                                                status: sanitizeString(Swal.getPopup().querySelector('#status').value)
+                                                name: Swal.getPopup().querySelector('#name').value,
+                                                make: Swal.getPopup().querySelector('#make').value,
+                                                color: Swal.getPopup().querySelector('#color').value,
+                                                status: Swal.getPopup().querySelector('#status').value
                                             }
                                         })
                                     }).then(function(response) {
@@ -658,11 +654,11 @@
                             }).then(function(result) {
                                 if (result.isConfirmed) {
                                     let new_model = result.value.data.model;
-                                    self._data.models.push(result.value.data.model);
+                                    self._data.models.push(new_model);
                                     // Allow Vue to add element to DOM before scrolling to view.
                                     // This is a little hacky but it works.
                                     setTimeout(function() {
-                                        self.getRowByModelName(new_model)[0]
+                                        self.getRowByModelID(new_model)[0]
                                             .scrollIntoView({
                                                 behavior: "smooth", // or "auto" or "instant"
                                                 block: "start" // or "end"
@@ -690,14 +686,17 @@
                                     model[i] = null;
                                 }
                                 // This could also be done server side.
-                                model[i] = sanitizeString(model[i]);
+                                // model[i] = sanitizeString(model[i]);
+                                model[i] = model[i];
                             }
 
                             // Send api call via browsers fetch functionaly.
                             // It would be nicer to have a websocket to dynamically fire
                             // these events to the server side.
                             let self = this;
-                            return fetch('/api/v1/model/' + model.name, {
+                            // TODO: more testing with encodeURIComponent & decodeURIComponent to make
+                            // sure the 'name' field is URL safe
+                            return fetch('/api/v1/model/' + model.id, {
                                 method: 'PUT',
                                 headers: {
                                     'Content-Type': 'application/json'
@@ -736,7 +735,7 @@
                                 allowOutsideClick: function(){ return !Swal.isLoading(); },
                                 // Here is a nice example of a Promise chain
                                 preConfirm: function() {
-                                    return fetch('/api/v1/model/' + model.name, {
+                                    return fetch('/api/v1/model/' + model.id, {
                                         method: 'DELETE'
                                     }).then(function(response) {
                                         return response.json();
@@ -751,7 +750,7 @@
                                         // By removing the model from our list Vue will automatically
                                         // detect the changes and update the DOM dynamically.
                                         self._data.models = self._data.models.filter(function(d) {
-                                            return d.name != model.name;
+                                            return d.id != model.id;
                                         });
 
                                         // 'Trigger' a filter change.

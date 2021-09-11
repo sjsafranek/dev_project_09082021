@@ -20,21 +20,20 @@ class Model(object):
         I am taking some inspiration from the Django ORM.
     '''
 
-    fields = ['name', 'make', 'color', 'status', 'create_at', 'update_at']
-    filterable = ['name', 'make', 'color', 'status', 'create_at', 'update_at']
+    fields = ['id', 'name', 'make', 'color', 'status', 'create_at', 'update_at']
+    filterable = ['id', 'name', 'make', 'color', 'status', 'create_at', 'update_at']
     editable = ['make', 'color', 'status']
 
     def __init__(self, **kwargs):
         self._data = kwargs
 
     def get(self, key):
-        # We are technically using self._data as a cache
-        if key in self.fields:
-            if key not in self._data:
-                # TODO: guard against over writing in memory changes...
-                for row in self._fetch(name=self.name):
-                    self._data = row
+        if self._data:
             return self._data.get(key)
+
+    @property
+    def id(self):
+        return self.get('id')
 
     @property
     def name(self):
@@ -94,11 +93,12 @@ class Model(object):
 
             # Determine if this is an INSERT or UPDATE.
             # Always use parameter substitution to prevent SQL injection.
-            args = (self.make, self.color, self.status, self.name, )
-            if self.exists(name=self.name):
+            if self.exists(id=self.id):
+                args = (self.make, self.color, self.status, self.name, self.id)
                 cursor.execute(
-                    '''UPDATE models SET make = ?, color = ?, status = ? WHERE name = ?;''', args)
+                    '''UPDATE models SET make = ?, color = ?, status = ?, name = ? WHERE id = ?;''', args)
             else:
+                args = (self.make, self.color, self.status, self.name, )
                 cursor.execute(
                     '''INSERT INTO models (make, color, status, name) VALUES (?, ?, ?, ?);''',
                     args)
@@ -106,15 +106,19 @@ class Model(object):
             # Commit changes
             conn.commit()
 
+            # I would prefer to use the new 'RETURNING' clause here
+            self._data = cursor.execute('''SELECT * FROM models WHERE rowid = ?;''', (cursor.lastrowid,)).fetchone()
+
     def delete(self):
         with database.connect() as conn:
             cursor = conn.cursor()
             cursor.execute(
-                '''DELETE FROM models WHERE name = ?;''', (self.name,))
+                '''DELETE FROM models WHERE id = ?;''', (self.id,))
             conn.commit()
 
     @classmethod
     def _fetch(cls, **kwargs):
+
         # Build query and collect filter params
         query = '''SELECT * FROM models'''
         filters = []
@@ -127,6 +131,9 @@ class Model(object):
         if len(filters):
             query += ' WHERE ' + ' AND '.join(filters)
         query += ';'
+
+        if len([f for f in filters if f]) != len([p for p in params if p]):
+            raise Value('WAT?!?!')
 
         # Run query and return results
         with database.connect() as conn:
@@ -142,20 +149,16 @@ class Model(object):
         ]
 
     @classmethod
-    def exists(cls, name):
+    def exists(cls, id):
         with database.connect() as conn:
             cursor = conn.cursor()
             row = cursor.execute(
-                '''SELECT EXISTS(SELECT 1 FROM models WHERE name = ?) AS 'exists';''',
-                (name,
+                '''SELECT EXISTS(SELECT 1 FROM models WHERE id = ?) AS 'exists';''',
+                (id,
                  )).fetchone()
             return 0 != row['exists']
 
     def toDict(self):
-        # This will ignore any changes currently in memory...
-        data = self._fetch(name=self.name)
-        if len(data):
-            return data[0]
         return self._data
 
 

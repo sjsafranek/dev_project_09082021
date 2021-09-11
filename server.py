@@ -12,11 +12,12 @@ import sys
 import json
 import time
 import signal
+import sqlite3
 import os.path
 from urllib.parse import quote
+from urllib.parse import unquote
 from urllib.parse import urlparse
 from urllib.parse import parse_qs
-from urllib.parse import unquote
 from http.server import HTTPServer
 from http.server import BaseHTTPRequestHandler
 from socketserver import ThreadingMixIn
@@ -150,14 +151,19 @@ class Controller(BaseHTTPRequestHandler):
         ''' This merges parameters sent via different methods (JSON, form and query string).
             We will prioritize data sent within the request body.
         '''
-        return {
+        params = {
             **self.args,
             **self.form,
             **self.json().get('params', {})
         }
+        # Get any parameters from the URL
+        id = self.getModelIDFromRequestURL()
+        if id:
+            params['id'] = id
+        return params
 
     # These two methods are just helper functions for the application logic.
-    def _getModelNameFromUrl(self):
+    def getModelIDFromRequestURL(self):
         ''' This extracts the 'name' parameter from the url.
 
             Pretty clunky and room for improvement.
@@ -165,18 +171,16 @@ class Controller(BaseHTTPRequestHandler):
         url = urlparse(self.path)
         if url.path.startswith('/api/v1/model/'):
             parts = url.path.replace('/api/v1/model/', '').split('/')
-            return unquote(parts[0])
+            return quote(parts[0])
         elif url.path.startswith('/model/'):
             parts = url.path.replace('/model/', '').split('/')
-            return unquote(parts[0])
+            return quote(parts[0])
         return None
 
     def getModel(self):
         ''' Fetches the Model object for the given 'name' supplied by the request. '''
-        name = self._getModelNameFromUrl()
-        if not name:
-            name = self.params['name']
-        models = Model.fetch(name=name)
+        id = self.params.get('id')
+        models = Model.fetch(id=id)
         return models[0] if len(models) else None
 
     # Here are the HTTP request handlers.
@@ -215,24 +219,19 @@ class Controller(BaseHTTPRequestHandler):
             return self.indexHandler()
 
         elif url.path in ['/api/v1/model', '/create']:
-            # Check to see if a Model with the supplied name exists.
-            # If one doesn't, create a new Model object.
-            params = self.params
-            name = params.get('name')
-            if name:
-                # Sanitize the name
-                params['name'] = quote(name, safe='')
-                if Model.exists(name):
-                    return self.errorMethodBadRequest(
-                        'Model already exists: {0}'.format(name))
-            model = Model(**params)
-            model.save()
+            try:
+                # Create new model
+                model = Model(**self.params)
+                model.save()
 
-            # Depending on endpoint return api response or redirect.
-            if '/api/v1/model' == url.path:
-                return self.sendAPIResponse(model=model.toDict())
-            else:
-                return self.redirect('/')
+                # Depending on endpoint return api response or redirect.
+                if '/api/v1/model' == url.path:
+                    return self.sendAPIResponse(model=model.toDict())
+                else:
+                    return self.redirect('/')
+
+            except Exception as e:
+                return self.errorMethodBadRequest(str(e))
 
         self.errorNotFound()
 
@@ -289,7 +288,6 @@ class Controller(BaseHTTPRequestHandler):
             model = self.getModel()
             if model:
                 # Update model with new values. Default to existing value.
-                # TODO: Sanitize all incoming strings.
                 params = self.params
                 model.color = params.get('color', model.color)
                 model.make = params.get('make', model.make)

@@ -49,8 +49,4 @@ Starting server at http://0.0.0.0:8888
 ## Issues
 
 An important thing to note is that on Windows, within cmd.exe, sometimes it doesn't
-respond to the first 'CONTROL-C'.
-
-I also didn't think to guard against 'funky' characters like emojis until further
-in development. Any characters that break a URL, will end up breaking the page.
-This is something that would need to be fixed for a production level environment.
+respond to the first 'CONTROL-C'. I am not sure why this is the case.
