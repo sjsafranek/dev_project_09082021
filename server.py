@@ -347,5 +347,5 @@ def start(host='localhost', port=8080):
         # server.socket.close()
 
     print("Server stopped.")
-    sys.exit(1)
+    sys.exit(0)
     # quit()
