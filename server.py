@@ -67,8 +67,6 @@ class Controller(BaseHTTPRequestHandler):
         else:
             self.wfile.write(content)
         self.wfile.flush()
-        # print(dir(self))
-        # self.finish()
 
     # The next few methods are just helpers to keep things clean
     # within our application logic.
@@ -98,6 +96,12 @@ class Controller(BaseHTTPRequestHandler):
             "status": 'ok' if 200 == kwargs.get('status', 200) else 'error',
             "data": kwargs
         }, kwargs.get('status', 200))
+
+    def sendStaticFile(self, fpath):
+        with open(fpath, 'rb') as fh:
+            content = fh.read()
+            contentType = getMimeTypeFromFile(fpath)[0]
+            return self.send(content, content_type=contentType)
 
     # This section contains methods to help get/collect parameters
     # sent in the HTTP request.
@@ -185,6 +189,7 @@ class Controller(BaseHTTPRequestHandler):
 
     # Here are the HTTP request handlers.
     # This section contains the bulk for our application logic.
+
     def indexHandler(self):
         ''' HTTP handler for our index path.
 
@@ -206,6 +211,13 @@ class Controller(BaseHTTPRequestHandler):
             data = [model.toDict() for model in Model.fetch(**self.params)]
             page = tmpl.replace('{{models}}', json.dumps(data))
             self.sendHTML(page)
+
+    def pingHandler(self):
+        self.sendAPIResponse(
+            version=VERSION,
+            start_time=START_TIME,
+            up_time=time.time() - START_TIME
+        )
 
     def do_HEAD(self):
         return
@@ -243,23 +255,16 @@ class Controller(BaseHTTPRequestHandler):
         if '/' == url.path:
             return self.indexHandler()
 
-        # Handle static assets...
+        # Handler static assets...
         # TODO: Add a better handler for static folders.
         elif url.path.startswith('/static/'):
             parts = url.path.split('/')
-            path = os.path.join(*[part for part in parts if part])
-            with open(path, 'rb') as fh:
-                content = fh.read()
-                contentType = getMimeTypeFromFile(path)[0]
-                return self.send(content, content_type=contentType)
+            fpath = os.path.join(*[part for part in parts if part])
+            return self.sendStaticFile(fpath)
 
         # It's always nice to include a route for health checks.
         elif '/ping' == url.path:
-            return self.sendAPIResponse(
-                version=VERSION,
-                start_time=START_TIME,
-                up_time=time.time() - START_TIME
-            )
+            return self.pingHandler()
 
         # Basic API endpoints for testing
         elif '/api/v1/models' == url.path:
