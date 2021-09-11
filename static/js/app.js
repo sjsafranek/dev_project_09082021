@@ -246,6 +246,8 @@ var App = function(models) {
                         for (let i in data.data.model) {
                             model[i] = data.data.model[i];
                         }
+
+                        self.filterChange();
                     });
                 }).catch(function(error) {
                     // NOTE: Ideally, I should "rollback" the user update and restore it to the previous value...
