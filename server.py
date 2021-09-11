@@ -7,11 +7,13 @@ This will constitute as our "[C]ontroller" in the MVC architecture.
 '''
 
 import re
+import os
 import sys
 import json
 import time
 import signal
 import os.path
+import threading
 from urllib.parse import quote
 from urllib.parse import urlparse
 from urllib.parse import parse_qs
@@ -22,7 +24,6 @@ from socketserver import ThreadingMixIn
 # from socketserver import ForkingMixIn     # This does not work on windows
 # import asyncio        # I haven't used this enough. If I have time I
 # might try to utilize it.
-import threading
 
 from models import Model
 
@@ -316,7 +317,8 @@ class ThreadingSimpleServer(ThreadingMixIn, HTTPServer):
         multiple browser tabs.
 
         Unfortunately, this will occasionally deadlocks when it is shutting down.
-        I looked around but haven't found a good solution yet...
+        I looked around but haven't found a good solution yet. Due to this issue
+        I would probably look into using the asyncio module for future projects.
     '''
     pass
 
@@ -349,13 +351,17 @@ def start(host='localhost', port=8080):
     print("Server stopped.")
 
     # This is brutal but I couldn't find a better way of doing this.
-    if server._threads:
-        for thread in server._threads:
-            if thread.is_alive():
-                if 'linux' == sys.platform:
-                    signal.pthread_kill(thread.ident, signal.SIGKILL)
-                elif 'win' in sys.platform:
-                    # I have no idea how to kill a thread on Windows
-                    os._exit(0)
+    # For some reason threads will deadlock within the ThreadingMixIn.
+    for thread in threading.enumerate():
+        if thread.is_alive():
+            print(thread.name)
+            if 'MainThread' == thread.name:
+                continue
+            if 'linux' == sys.platform:
+                signal.pthread_kill(thread.ident, signal.SIGKILL)
+            elif 'win' in sys.platform:
+                # I have no idea how to kill a thread on Windows
+                os._exit(0)
 
-    # sys.exit(0)
+
+#
