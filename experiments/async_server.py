@@ -6,6 +6,7 @@ import threading
 import http.server
 import asyncio
 import time
+from http.client import parse_headers
 
 DEFAULT_HTTP_HOST = '127.0.0.1'
 DEFAULT_HTTP_PORT = 8087
@@ -14,7 +15,11 @@ DEFAULT_HTTP_PORT = 8087
 async def http_handler(reader, writer):
     data = await reader.read(100)
     message = data.decode()
+
     print(message)
+    # print(parse_headers())
+    print()
+
     writer.write(data)
     await writer.drain()
     writer.close()
