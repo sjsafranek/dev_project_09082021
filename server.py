@@ -7,10 +7,10 @@ This will constitute as our "[C]ontroller" in the MVC architecture.
 '''
 
 import re
-import sys
+# import sys
 import json
-# import html
 import time
+import signal
 import os.path
 from urllib.parse import quote
 from urllib.parse import urlparse
@@ -347,5 +347,10 @@ def start(host='localhost', port=8080):
         # server.socket.close()
 
     print("Server stopped.")
-    sys.exit(0)
-    # quit()
+
+    # This is brutal but I couldn't find a better way of doing this.
+    for thread in server._threads:
+        if thread.is_alive():
+            signal.pthread_kill(thread.ident, signal.SIGKILL)
+
+    # sys.exit(0)
