@@ -7,7 +7,9 @@ This will constitute as our "[C]ontroller" in the MVC architecture.
 '''
 
 import re
+import sys
 import json
+# import html
 import time
 import os.path
 from urllib.parse import urlparse
@@ -210,6 +212,7 @@ class Controller(BaseHTTPRequestHandler):
             # Check to see if a Model with the supplied name exists.
             # If one doesn't, create a new Model object.
             name = self.params.get('name')
+            # name = html.escape(name)
             if name:
                 if Model.exists(name):
                     return self.errorMethodBadRequest(
@@ -340,3 +343,5 @@ def start(host='localhost', port=8080):
         # server.socket.close()
 
     print("Server stopped.")
+    # sys.exit()
+    quit()

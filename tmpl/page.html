@@ -304,6 +304,7 @@
             // For this project I am just going "hand-wave" around it.
             // I don't really want to setup a '/static' route on the
             // server side.
+            // Next time I would probably do this in TypeScript.
 
 
             // PieChart class to display 'status' values within selection.
@@ -462,6 +463,12 @@
 
             }
 
+
+            // Had to add this to cleanup funky characters lol
+            function sanitizeString(str){
+                str = str.replace(/[^a-z0-9áéíóúñü \.,_-]/gim,"");
+                return str.trim();
+            }
 
 
             // Lets throw in some Vanilla JS for old times sake.
@@ -622,10 +629,10 @@
                                         body: JSON.stringify({
                                             "method": "create_model",
                                             "params": {
-                                                name: Swal.getPopup().querySelector('#name').value,
-                                                make: Swal.getPopup().querySelector('#make').value,
-                                                color: Swal.getPopup().querySelector('#color').value,
-                                                status: Swal.getPopup().querySelector('#status').value
+                                                name: sanitizeString(Swal.getPopup().querySelector('#name').value),
+                                                make: sanitizeString(Swal.getPopup().querySelector('#make').value),
+                                                color: sanitizeString(Swal.getPopup().querySelector('#color').value),
+                                                status: sanitizeString(Swal.getPopup().querySelector('#status').value)
                                             }
                                         })
                                     }).then(function(response) {
@@ -671,6 +678,8 @@
                                 if ('' == model[i]) {
                                     model[i] = null;
                                 }
+                                // This could also be done server side.
+                                model[i] = sanitizeString(model[i]);
                             }
 
                             // Send api call via browsers fetch functionaly.
