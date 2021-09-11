@@ -336,8 +336,9 @@ class ThreadingSimpleServer(ThreadingMixIn, HTTPServer):
 
 # Listen and serve on specified host and port
 def start(host='localhost', port=8080):
+    server = HTTPServer((host, port), Controller)
     # server = ForkingHTTPServer((host, port), Controller)
-    server = ThreadingSimpleServer((host, port), Controller)
+    # server = ThreadingSimpleServer((host, port), Controller)
     print("Starting server at http://{0}:{1}".format(host, port))
 
     try:
@@ -345,24 +346,24 @@ def start(host='localhost', port=8080):
     except KeyboardInterrupt:
         pass
     finally:
-        server.shutdown()
-        # server.server_close()
+        # server.shutdown()
+        server.server_close()
         # server.socket.close()
 
     print("Server stopped.")
 
-    # This is brutal but I couldn't find a better way of doing this.
-    # For some reason threads will deadlock within the ThreadingMixIn.
-    for thread in threading.enumerate():
-        if thread.is_alive():
-            print(thread.name)
-            if 'MainThread' == thread.name:
-                continue
-            if 'linux' == sys.platform:
-                signal.pthread_kill(thread.ident, signal.SIGKILL)
-            elif 'win' in sys.platform:
-                # I have no idea how to kill a thread on Windows
-                os._exit(0)
+    # # This is brutal but I couldn't find a better way of doing this.
+    # # For some reason threads will deadlock within the ThreadingMixIn.
+    # for thread in threading.enumerate():
+    #     if thread.is_alive():
+    #         print(thread.name)
+    #         if 'MainThread' == thread.name:
+    #             continue
+    #         if 'linux' == sys.platform:
+    #             signal.pthread_kill(thread.ident, signal.SIGKILL)
+    #         elif 'win' in sys.platform:
+    #             # I have no idea how to kill a thread on Windows
+    #             os._exit(0)
 
 
 #
