@@ -7,7 +7,7 @@ This will constitute as our "[C]ontroller" in the MVC architecture.
 '''
 
 import re
-# import sys
+import sys
 import json
 import time
 import signal
@@ -349,8 +349,13 @@ def start(host='localhost', port=8080):
     print("Server stopped.")
 
     # This is brutal but I couldn't find a better way of doing this.
-    for thread in server._threads:
-        if thread.is_alive():
-            signal.pthread_kill(thread.ident, signal.SIGKILL)
+    if server._threads:
+        for thread in server._threads:
+            if thread.is_alive():
+                if 'linux' == sys.platform:
+                    signal.pthread_kill(thread.ident, signal.SIGKILL)
+                elif 'win' in sys.platform:
+                    # I have no idea how to kill a thread on Windows
+                    os._exit()
 
     # sys.exit(0)
