@@ -31,7 +31,7 @@ I apologize in advance for any spell mistakes and I thank you for your considera
 
 ```bash
 $ python3 main.py
-Server started http://localhost:8080
+Starting server at http://localhost:8080
 ```
 
 2. In your preferred browser go to http://localhost:8080

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import json
 import socketserver
@@ -7,31 +7,37 @@ import http.server
 import asyncio
 import time
 
-SERVER_ADDRESS = '127.0.0.1'
-HTTP_PORT = 8087
-parsed_data = {}
+DEFAULT_HTTP_HOST = '127.0.0.1'
+DEFAULT_HTTP_PORT = 8087
 
 
-async def handle_http(reader, writer):
+async def http_handler(reader, writer):
     data = await reader.read(100)
     message = data.decode()
     print(message)
     writer.write(data)
     await writer.drain()
     writer.close()
+    print('done')
 
 
 async def main():
-    http_server = await asyncio.start_server(
-        handle_http, SERVER_ADDRESS, HTTP_PORT
-    )
-    print(f'HTTP server listening on port {HTTP_PORT}')
+
+    HTTP_HOST = DEFAULT_HTTP_HOST
+    HTTP_PORT = DEFAULT_HTTP_PORT
+
+    # This needs a callback
+    http_server = await asyncio.start_server(http_handler, HTTP_HOST, HTTP_PORT)
+
+    # This needs a 'protocol_factory'
+    # https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.create_server
+    # loop = asyncio.get_running_loop()
+    # http_server = await loop.create_server(HTTPProtocol, SERVER_ADDRESS, HTTP_PORT)
+
+    print("Starting server at http://{0}:{1}".format(HTTP_HOST, HTTP_PORT))
 
     try:
-        while True:
-            if parsed_data:
-                print(parsed_data.values())
-            await asyncio.sleep(0.1)
+        await http_server.serve_forever()
     except KeyboardInterrupt:
         print('Exit called')
 

@@ -337,7 +337,7 @@ class ThreadingSimpleServer(ThreadingMixIn, HTTPServer):
 def start(host='localhost', port=8080):
     # server = ForkingHTTPServer((host, port), Controller)
     server = ThreadingSimpleServer((host, port), Controller)
-    print("Server started http://%s:%s" % (host, port))
+    print("Starting server at http://{0}:{1}".format(host, port))
 
     try:
         server.serve_forever()
