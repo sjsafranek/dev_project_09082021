@@ -564,7 +564,7 @@
                                 // _show ? $elem.show() : $elem.hide();
                                 let $elem = self.getRowByModelID(d);
                                 // _show ? $elem.fadeIn() : $elem.fadeOut();
-                                _show ? $elem.addClass('show').removeClass('hide') : $elem.addClass('hide').removeClass('show');                
+                                _show ? $elem.addClass('show').removeClass('hide') : $elem.addClass('hide').removeClass('show');
                                 return _show;
                             });
 
@@ -705,8 +705,19 @@
                             }).then(function(response) {
                                 response.json().then(function(data) {
                                     // TODO: Display toast alert to notify user.
-                                    ('ok' == data.status) ?
-                                        self.filterChange() : self.showError(data.error.message);
+                                    if ('ok' != data.status) {
+                                        return self.showError(data.error.message);
+                                    }
+
+                                    // Update Model object in list
+                                    // Vue doesn't seem to capture the change event if I write
+                                    // over the original Model object.
+                                    for (let i in data.data.model) {
+                                        model[i] = data.data.model[i];
+                                    }
+
+                                    // Trigger a filter change
+                                    self.filterChange();
                                 });
                             }).catch(function(error) {
                                 // NOTE: Ideally, I would "rollback" the user update and restore

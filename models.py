@@ -97,17 +97,19 @@ class Model(object):
                 args = (self.make, self.color, self.status, self.name, self.id)
                 cursor.execute(
                     '''UPDATE models SET make = ?, color = ?, status = ?, name = ? WHERE id = ?;''', args)
+                # Get any changes
+                self._data = cursor.execute('''SELECT * FROM models WHERE id = ?;''', (self.id,)).fetchone()
             else:
+                # I would prefer to use the new 'RETURNING' clause here
                 args = (self.make, self.color, self.status, self.name, )
                 cursor.execute(
                     '''INSERT INTO models (make, color, status, name) VALUES (?, ?, ?, ?);''',
                     args)
+                # Get new record
+                self._data = cursor.execute('''SELECT * FROM models WHERE rowid = ?;''', (cursor.lastrowid,)).fetchone()
 
             # Commit changes
             conn.commit()
-
-            # I would prefer to use the new 'RETURNING' clause here
-            self._data = cursor.execute('''SELECT * FROM models WHERE rowid = ?;''', (cursor.lastrowid,)).fetchone()
 
     def delete(self):
         with database.connect() as conn:
