@@ -159,21 +159,6 @@
             }
 
 
-
-
-            .show {
-                opacity: 1;
-                height: auto;
-                transition: .3s all ease;
-            }
-
-            .hide {
-                opacity: 0;
-                height: 0;
-                transition: .3s all ease;
-            }
-
-
         </style>
 
     </head>
@@ -560,11 +545,8 @@
                                         }
                                     }
                                 }
-                                // let $elem = $('#'+d.name.replace(/ /g, ''));
-                                // _show ? $elem.show() : $elem.hide();
                                 let $elem = self.getRowByModelID(d);
-                                // _show ? $elem.fadeIn() : $elem.fadeOut();
-                                _show ? $elem.addClass('show').removeClass('hide') : $elem.addClass('hide').removeClass('show');
+                                _show ? $elem.fadeIn() : $elem.fadeOut();
                                 return _show;
                             });
 
