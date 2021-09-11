@@ -13,7 +13,6 @@ import json
 import time
 import signal
 import os.path
-# import threading
 from urllib.parse import quote
 from urllib.parse import urlparse
 from urllib.parse import parse_qs
@@ -25,7 +24,9 @@ from socketserver import ThreadingMixIn
 # import asyncio        # I haven't used this enough. If I have time I
 # might try to utilize it.
 
+
 from models import Model
+from utils import getMimeTypeFromFile
 
 
 VERSION = '0.0.1'
@@ -60,7 +61,10 @@ class Controller(BaseHTTPRequestHandler):
         self.send_response(status)
         self.send_header("Content-type", content_type)
         self.end_headers()
-        self.wfile.write(bytes(content, "UTF-8"))
+        if bytes != type(content):
+            self.wfile.write(bytes(content, "UTF-8"))
+        else:
+            self.wfile.write(content)
         self.wfile.flush()
         # print(dir(self))
         # self.finish()
@@ -239,6 +243,16 @@ class Controller(BaseHTTPRequestHandler):
         # Handle redirects
         if '/' == url.path:
             return self.indexHandler()
+
+        # Handle static assets...
+        # TODO: Add a better handler for static folders.
+        elif url.path.startswith('/static/'):
+            parts = url.path.split('/')
+            path = os.path.join(*[part for part in parts if part])
+            with open(path, 'rb') as fh:
+                content = fh.read()
+                contentType = getMimeTypeFromFile(path)[0]
+                return self.send(content, content_type=contentType)
 
         # It's always nice to include a route for health checks.
         elif '/ping' == url.path:

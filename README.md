@@ -43,5 +43,10 @@ The script also accepts arguments from the command line:
 
 ```bash
 $ python3 main.py -host 0.0.0.0 -port 8888
-Server started http://0.0.0.0:8888
+Starting server at http://0.0.0.0:8888
 ```
+
+## Issues
+
+An important thing to note is that on Windows, within cmd.exe, sometimes it doesn't
+respond to the first 'CONTROL-C'.
