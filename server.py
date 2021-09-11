@@ -356,6 +356,6 @@ def start(host='localhost', port=8080):
                     signal.pthread_kill(thread.ident, signal.SIGKILL)
                 elif 'win' in sys.platform:
                     # I have no idea how to kill a thread on Windows
-                    os._exit()
+                    os._exit(0)
 
     # sys.exit(0)
