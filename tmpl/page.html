@@ -640,6 +640,7 @@
                                     // Allow Vue to add element to DOM before scrolling to view.
                                     // This is a little hacky but it works.
                                     setTimeout(function() {
+                                        self.filterChange();
                                         self.getRowByModelID(new_model)[0]
                                             .scrollIntoView({
                                                 behavior: "smooth", // or "auto" or "instant"
