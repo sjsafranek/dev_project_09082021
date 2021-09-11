@@ -358,20 +358,4 @@ def start(host='localhost', port=8080):
     finally:
         server.server_close()
 
-    print("Server stopped.")
-
-    # # This is brutal but I couldn't find a better way of doing this.
-    # # For some reason threads will deadlock within the ThreadingMixIn.
-    # for thread in threading.enumerate():
-    #     if thread.is_alive():
-    #         print(thread.name)
-    #         if 'MainThread' == thread.name:
-    #             continue
-    #         if 'linux' == sys.platform:
-    #             signal.pthread_kill(thread.ident, signal.SIGKILL)
-    #         elif 'win' in sys.platform:
-    #             # I have no idea how to kill a thread on Windows
-    #             os._exit(0)
-
-
-#
+    print("Server stopped")
