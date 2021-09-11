@@ -13,7 +13,7 @@ import json
 import time
 import signal
 import os.path
-import threading
+# import threading
 from urllib.parse import quote
 from urllib.parse import urlparse
 from urllib.parse import parse_qs
@@ -316,9 +316,9 @@ class ThreadingSimpleServer(ThreadingMixIn, HTTPServer):
         HTTPServer, but unfortunately I would get the occasional hang when using
         multiple browser tabs.
 
-        Unfortunately, this will occasionally deadlocks when it is shutting down.
-        I looked around but haven't found a good solution yet. Due to this issue
-        I would probably look into using the asyncio module for future projects.
+        This will occasionally deadlock when it is shutting down. I looked around
+        but haven't found a good solution yet. Due to this issue I would probably
+        look into using the asyncio module (or something similar) for future projects.
     '''
     pass
 
@@ -336,9 +336,19 @@ class ThreadingSimpleServer(ThreadingMixIn, HTTPServer):
 
 # Listen and serve on specified host and port
 def start(host='localhost', port=8080):
-    server = HTTPServer((host, port), Controller)
+    # server = HTTPServer((host, port), Controller)
     # server = ForkingHTTPServer((host, port), Controller)
-    # server = ThreadingSimpleServer((host, port), Controller)
+    server = ThreadingSimpleServer((host, port), Controller)
+
+    # This addresses the occasional issue when the port does not
+    # get released on shutdown.
+    server.allow_reuse_address = True
+
+    # It looks like this parameter fixes the deadlock I was running into
+    # https://docs.python.org/3/library/socketserver.html#socketserver.ThreadingMixIn
+    # server.block_on_close = False
+    server.daemon_threads = True
+
     print("Starting server at http://{0}:{1}".format(host, port))
 
     try:
@@ -346,9 +356,7 @@ def start(host='localhost', port=8080):
     except KeyboardInterrupt:
         pass
     finally:
-        # server.shutdown()
         server.server_close()
-        # server.socket.close()
 
     print("Server stopped.")
 
