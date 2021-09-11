@@ -27,12 +27,14 @@ I apologize in advance for any spell mistakes and I thank you for your considera
 
 ## Usage
 
+1. Startup the server
+
 ```bash
 $ python3 main.py
 Server started http://localhost:8080
 ```
 
-In your preferred browser go to http://localhost:8080
+2. In your preferred browser go to http://localhost:8080
 
 The script also accepts arguments from the command line:
 

@@ -12,6 +12,7 @@ import json
 # import html
 import time
 import os.path
+from urllib.parse import quote
 from urllib.parse import urlparse
 from urllib.parse import parse_qs
 from urllib.parse import unquote
@@ -211,13 +212,15 @@ class Controller(BaseHTTPRequestHandler):
         elif url.path in ['/api/v1/model', '/create']:
             # Check to see if a Model with the supplied name exists.
             # If one doesn't, create a new Model object.
-            name = self.params.get('name')
-            # name = html.escape(name)
+            params = self.params
+            name = params.get('name')
             if name:
+                # Sanitize the name
+                params['name'] = quote(name, safe='')
                 if Model.exists(name):
                     return self.errorMethodBadRequest(
                         'Model already exists: {0}'.format(name))
-            model = Model(**self.params)
+            model = Model(**params)
             model.save()
 
             # Depending on endpoint return api response or redirect.
@@ -271,6 +274,7 @@ class Controller(BaseHTTPRequestHandler):
             model = self.getModel()
             if model:
                 # Update model with new values. Default to existing value.
+                # TODO: Sanitize all incoming strings.
                 params = self.params
                 model.color = params.get('color', model.color)
                 model.make = params.get('make', model.make)
@@ -343,5 +347,5 @@ def start(host='localhost', port=8080):
         # server.socket.close()
 
     print("Server stopped.")
-    # sys.exit()
+    sys.exit(1)
     # quit()
