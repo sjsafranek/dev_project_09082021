@@ -212,11 +212,19 @@ var App = function(models) {
                             self.filterChange();
 
                             // Auto scroll to the newly added element.
-                            self.getRowByModelID(new_model)[0]
+                            let $row = self.getRowByModelID(new_model);
+                            $row[0]
                                 .scrollIntoView({
                                     behavior: "smooth",
                                     block: "start" // "end"
                                 });
+
+                            // Throb row that was updated
+                            $row.addClass('text-pulsate text-bold text-success');
+                            setTimeout(function() {
+                                $row.removeClass('text-pulsate text-bold text-success');
+                            }, 3000);
+
                         }, 200);
                     }
                 });
@@ -258,6 +266,8 @@ var App = function(models) {
                             return self.showError(data.error.message);
                         }
 
+                        // Update the view with using the response.
+
                         // Update Model object in list
                         // Vue doesn't seem to capture the change event if I write
                         // over the original Model object.
@@ -265,9 +275,18 @@ var App = function(models) {
                             model[i] = data.data.model[i];
                         }
 
+                        // Trigger filter change
                         self.filterChange();
+
+                        // Throb row that was updated
+                        let $row = self.getRowByModelID(model);
+                        $row.addClass('text-pulsate text-bold text-success');
+                        setTimeout(function() {
+                            $row.removeClass('text-pulsate text-bold text-success');
+                        }, 3000);
                     });
                 }).catch(function(error) {
+                    console.log(error);
                     // NOTE: Ideally, I should "rollback" the user update and restore it to the previous value...
                     self.showError('Unable to communicate with server');
                 });
