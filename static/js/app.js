@@ -372,14 +372,15 @@ var App = function(models) {
                                 $popup.find('.compare-status-cell').text(selected.status);
 
                                 // Show if column values match
+                                let class_list = 'pulsate-info-text text-primary';
                                 (selected.make == model.make) ?
-                                    $popup.find('.compare-make-row').addClass('text-primary') : $popup.find('.compare-make-row').removeClass('text-primary');
+                                    $popup.find('.compare-make-row').addClass(class_list) : $popup.find('.compare-make-row').removeClass(class_list);
 
                                 (selected.color == model.color) ?
-                                    $popup.find('.compare-color-row').addClass('text-primary') : $popup.find('.compare-color-row').removeClass('text-primary');
+                                    $popup.find('.compare-color-row').addClass(class_list) : $popup.find('.compare-color-row').removeClass(class_list);
 
                                 (selected.status == model.status) ?
-                                    $popup.find('.compare-status-row').addClass('text-primary') : $popup.find('.compare-status-row').removeClass('text-primary');
+                                    $popup.find('.compare-status-row').addClass(class_list) : $popup.find('.compare-status-row').removeClass(class_list);
 
                             })
                             .trigger('change');
