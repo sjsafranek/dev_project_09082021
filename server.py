@@ -259,8 +259,9 @@ class Controller(BaseHTTPRequestHandler):
             except Exception as e:
                 return self.errorMethodBadRequest(str(e))
 
-        # I did not realize PUT was not allowed in forms... pretty aggravating
+        # I did not realize PUT was not allowed in forms...
         elif re.match(r'^/model/[^/]+$', url.path):
+            # return self.do_PUT()
             model = self.getModel()
             if model:
                 params = self.params
