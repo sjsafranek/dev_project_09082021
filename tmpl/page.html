@@ -167,6 +167,9 @@
                             <% model.update_at %>
                         </div>
                         <div class="col-1 model-controls-container">
+                            <span class="me-1 btn-copy" title="Compare" @click="compareModel(model)">
+                                <i class="fas fa-balance-scale-right"></i>
+                            </span>
                             <span class="me-1 btn-copy" title="Copy" @click="copyModel(model)" @mouseover="toggleCreate" @mouseout="toggleCreate">
                                 <i class="far fa-copy"></i>
                             </span>

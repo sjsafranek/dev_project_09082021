@@ -35,10 +35,9 @@ _dbExists = os.path.exists(DB_FILE)
 
 # Open new database connection
 def connect():
-    # This is technically dangerous because with multiple
-    # writers SQLite3 could lock. I am going to ignore this
-    # consern because the likelyhood of this happening is
-    # low.
+    # This is technically dangerous because with multiple writers SQLite3
+    # could lock. I am going to ignore this consern because the likelyhood
+    # of this happening is low.
     conn = sqlite3.connect(DB_FILE)
 
     # Enable dict factory for sqlite3.
@@ -72,6 +71,9 @@ if not _dbExists:
         # Create basic tables and triggers
         cursor = conn.cursor()
 
+        # I am using a UUID for a primary key. This is over kill for a small
+        # project. I have gotten in the habit of doing this when working with
+        # horizontally scaling systems.
         # SQLite3 doesn't have a UUID function so we will use a custom one.
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS models (

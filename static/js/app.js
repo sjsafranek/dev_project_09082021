@@ -300,6 +300,91 @@ var App = function(models) {
                 }).catch(function(error) {
                     self.showError('Unable to communicate with server');
                 });
+            },
+
+            getModelByID: function(id) {
+                let model = this._data.models
+                            .filter(function(d) {
+                                return id == d.id;
+                            });
+                return model.length ? model[0] : null;
+            },
+
+            // Bonus!!! Bonus!!! Bonus!!!
+            compareModel: function(model) {
+                let self = this;
+                return Swal.fire({
+                    title: 'Compare Models',
+                    html: `
+                        <div class="row compare-container">
+
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Column</th>
+                                        <th scope="col">${model.name}</th>
+                                        <th scope="col compare-name">
+                                            <select id="compare-options" class="form-control form-control-sm text-bold"></select>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="compare-make-row">
+                                        <th scope="row">Make</th>
+                                        <td>${model.make}</td>
+                                        <td class="compare-make-cell"></td>
+                                    </tr>
+                                    <tr class="compare-color-row">
+                                        <th scope="row">Color</th>
+                                        <td>${model.color}</td>
+                                        <td class="compare-color-cell"></td>
+                                    </tr>
+                                    <tr class="compare-status-row">
+                                        <th scope="row">Status</th>
+                                        <td>${model.status}</td>
+                                        <td class="compare-status-cell"></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    `,
+                    didOpen: function() {
+                        // Setup some controls on requiring the 'name' field.
+                        $(Swal.getPopup().querySelector('#compare-options'))
+                            .append(
+                                self._data.models
+                                    .filter(function(d) {
+                                        return d.id != model.id;
+                                    })
+                                    .map(function(d) {
+                                        return $('<option>', {value: d.id}).text(d.name)
+                                    })
+                            )
+                            .on('change', function() {
+                                let $popup = $(Swal.getPopup());
+
+                                // Get selected model
+                                let selected = self.getModelByID(this.value);
+
+                                // Populate values in cell
+                                $popup.find('.compare-make-cell').text(selected.make);
+                                $popup.find('.compare-color-cell').text(selected.color);
+                                $popup.find('.compare-status-cell').text(selected.status);
+
+                                // Show if column values match
+                                (selected.make == model.make) ?
+                                    $popup.find('.compare-make-row').addClass('text-primary') : $popup.find('.compare-make-row').removeClass('text-primary');
+
+                                (selected.color == model.color) ?
+                                    $popup.find('.compare-color-row').addClass('text-primary') : $popup.find('.compare-color-row').removeClass('text-primary');
+
+                                (selected.status == model.status) ?
+                                    $popup.find('.compare-status-row').addClass('text-primary') : $popup.find('.compare-status-row').removeClass('text-primary');
+
+                            })
+                            .trigger('change');
+                    }
+                });
             }
 
         }

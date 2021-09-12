@@ -16,8 +16,8 @@ I have tested it out using the following operating systems and versions:
 | pysqlite | 2.6.0     | 2.6.0      |
 | Python   | 3.7.3     | 3.9.7      |
 
-I included comments throughout the code detailing some of my though process as I went
-through the exercise. I tried to identify as many bugs as I could (all software has them).
+I included comments throughout the code detailing my thought process as I went through
+the exercise. I tried to identify as many bugs as I could (all software has them).
 I apologize in advance for any spell mistakes and I thank you for your consideration.
 
 
@@ -52,8 +52,8 @@ consistent format.
 
 ### View
 
-Instead of doing a "simple" website I opted for a more dynamic UI using with Vue, D3
-and Bootstrap for the front end.
+Instead of doing a "simple" website I opted for a more dynamic UI using Vue, D3 and
+Bootstrap for the front end.
 
 The code for the front end (View) is contained in the `static` and `tmpl` directories.
 

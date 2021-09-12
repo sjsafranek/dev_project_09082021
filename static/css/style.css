@@ -38,6 +38,12 @@ body {
     background-color: rgba(0,0,0,.075);
 }
 
+.compare-container {
+    font-size: 14px;
+    text-align: left;
+    margin: 2px;
+}
+
 .table-body-container {
     /* This doesn't seem to work on my version of FireFox. */
     overflow-y: overlay;
