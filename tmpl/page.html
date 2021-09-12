@@ -152,7 +152,9 @@
                     -->
                     <div v-for="model in models" v-model='models' class="row table-row model-container" v-bind:id="model.id" @mouseover="toggleRead" @mouseout="toggleRead">
                         <div class="col-1" v-model='model.name'>
-                            <% model.name %>
+                            <a href="#" @click="window.location='/model/' + model.id">
+                                <% model.name %>
+                            </a>
                         </div>
                         <!-- I thought about adding an icon to be able to select which column
                              to use for the chart visualization.

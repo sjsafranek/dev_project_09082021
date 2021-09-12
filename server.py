@@ -221,6 +221,18 @@ class Controller(BaseHTTPRequestHandler):
             up_time=time.time() - START_TIME
         )
 
+    # This is a more traditional View for MVC.
+    def modelHandler(self):
+        model = self.getModel()
+        if model:
+            fpath = os.path.join('tmpl', 'model.html')
+            with open(fpath) as fh:
+                tmpl = fh.read()
+                page = tmpl.format(**model.toDict())
+                return self.sendHTML(page)
+        self.errorNotFound()
+
+
     def do_HEAD(self):
         return
 
@@ -247,6 +259,17 @@ class Controller(BaseHTTPRequestHandler):
             except Exception as e:
                 return self.errorMethodBadRequest(str(e))
 
+        # I did not realize PUT was not allowed in forms... pretty aggravating
+        elif re.match(r'^/model/[^/]+$', url.path):
+            model = self.getModel()
+            if model:
+                params = self.params
+                model.color = params.get('color', model.color)
+                model.make = params.get('make', model.make)
+                model.status = params.get('status', model.status)
+                model.save()
+                return self.modelHandler()
+
         self.errorNotFound()
 
     def do_GET(self):
@@ -267,6 +290,10 @@ class Controller(BaseHTTPRequestHandler):
         # It's always nice to include a route for health checks.
         elif '/ping' == url.path:
             return self.pingHandler()
+
+        # This is a more traditional 'View' for MVC.
+        elif re.match(r'^/model/[^/]+$', url.path):
+            return self.modelHandler()
 
         # Basic API endpoints for testing
         elif '/api/v1/models' == url.path:
@@ -305,7 +332,8 @@ class Controller(BaseHTTPRequestHandler):
                 if _isApiRequest:
                     return self.sendAPIResponse(model=model.toDict())
                 else:
-                    return self.redirect('/')
+                    # return self.redirect('/')
+                    self.modelHandler()
 
         self.errorNotFound()
 
