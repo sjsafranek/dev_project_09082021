@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+    <head>
+
+        <title>CRUDy :: {name}</title>
+
+        <meta charset=utf-8 />
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <meta name="author" content="Stefan Safranek">
+        <meta name="description" content=""/>
+
+        <!-- <meta http-equiv="Content-Security-Policy" content="script-src 'none'"> -->
+
+        <!-- The Chrome debugging tool 'Lighthouse' yelled at me to include these... -->
+        <link rel="apple-touch-icon" sizes="180x180" href="/static/images/applestatic-touch-icon.png">
+        <link rel="icon" type="image/png" sizes="32x32" href="/static/images/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/static/images/favicon-16x16.png">
+        <link rel="manifest" href="/static/manifest.json">
+
+        <!-- I am using the 'defer' and 'async' attributes to speed up the loading of the page. -->
+
+        <!-- Bootstrap -->
+        <link href="/static/bootstrap-5.1.1-dist/css/bootstrap.min.css" rel="stylesheet">
+        <script defer src="/static/bootstrap-5.1.1-dist/js/bootstrap.bundle.min.js"></script>
+        <script defer src="/static/popper_v2.9.3.min.js"></script>
+        <script defer src="/static/bootstrap-5.1.1-dist/js/bootstrap.min.js"></script>
+
+        <!-- Font Awesome -->
+        <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css" integrity="sha384-AYmEC3Yw5cVb3ZcuHtOA93w35dYTsvhLPVnYs9eStHfGJvOvKxVfELGroGkvsg+p" crossorigin="anonymous"/>
+
+        <!-- Moved everything into a separate stylesheet -->
+        <link rel="stylesheet" href="/static/css/style.css" />
+
+    </head>
+
+    <body>
+
+        <div class="container" id="view">
+
+            <div class="row">
+                <h4>
+                    <span class="label-create">C</span>
+                    <span class="label-read">R</span>
+                    <span class="label-update text-bold text-primary text-pulsate text-underline">U</span>
+                    <span class="label-delete">D</span>
+                    y
+                </h4>
+            </div>
+
+            <div class="row justify-content-center mt-5">
+                <div class="col-6 align-self-center">
+                    <!-- Grrrr!! PUT is not allowed in forms?!?! -->
+                    <form action="/model/{id}" method='POST'>
+                        <div class="form-group mb-2">
+                            <h1> {name} </h1>
+                            <div class="mb-2">
+                                Make
+                                <input class="form-control form-control-sm" type='text' name='make' value="{make}" placeholder="make" aria-describedby="help" required>
+                            </div>
+                            <div class="mb-2">
+                                Color
+                                <input class="form-control form-control-sm" type='text' name='color' value="{color}" placeholder="color" aria-describedby="help" required>
+                            </div>
+                            <div class="mb-2">
+                                Status
+                                <input class="form-control form-control-sm" type='text' name='status' value="{status}" placeholder="status" aria-describedby="help" required>
+                            </div>
+                            <div class="mb-2 text-muted">
+                                Created: {create_at}
+                            </div>
+                            <div class="mb-2 text-muted">
+                                Updated: {update_at}
+                            </div>
+                        </div>
+                        <button class='btn btn-sm btn-primary float-end' type='submit'>Save</button>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+
+    </body>
+
+</html>
