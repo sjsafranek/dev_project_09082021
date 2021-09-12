@@ -372,7 +372,7 @@ var App = function(models) {
                                 $popup.find('.compare-status-cell').text(selected.status);
 
                                 // Show if column values match
-                                let class_list = 'pulsate-info-text text-success';
+                                let class_list = 'pulsate-info-text text-success text-bold';
                                 (selected.make == model.make) ?
                                     $popup.find('.compare-make-row').addClass(class_list) : $popup.find('.compare-make-row').removeClass(class_list);
 
