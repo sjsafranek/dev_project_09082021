@@ -29,35 +29,46 @@ var App = function(models) {
                 status: null,
                 create_at: null,
                 update_at: null
-            }
+            },
+            piechartColumnId: 'status'
         },
 
         mounted: function () {
             let self = this;
 
             // Lets setup the basic D3 chart to show the 'status' values.
-            this.chart = new PieChart();
-            this.chart.update(this._data.models.map(function(d) {
-                return d.status;
-            }));
+            this.chart = new PieChart()
+                            .update(this._data.models.map(function(d) {
+                                return d[self.piechartColumnId];
+                            }))
+                            .on({
+                                click: function(label) {
+                                    self._data.filters[self.piechartColumnId] = label;
+                                    self.filterChange();
+                                },
+                                contextmenu: function(label) {
+                                    self._data.filters[self.piechartColumnId] = null;
+                                    self.filterChange();
+                                }
+                            });
         },
 
         methods: {
             // Fun little indicators for behavior
             toggleCreate: function() {
-                $('.label-create').toggleClass('pulsate-info-text text-bold text-underline');
+                $('.label-create').toggleClass('text-pulsate text-primary text-bold text-underline');
             },
 
             toggleRead: function() {
-                $('.label-read').toggleClass('pulsate-info-text text-bold text-underline');
+                $('.label-read').toggleClass('text-pulsate text-primary text-bold text-underline');
             },
 
             toggleUpdate: function() {
-                $('.label-update').toggleClass('pulsate-info-text text-bold text-underline');
+                $('.label-update').toggleClass('text-pulsate text-primary text-bold text-underline');
             },
 
             toggleDelete: function() {
-                $('.label-delete').toggleClass('pulsate-info-text text-bold text-underline');
+                $('.label-delete').toggleClass('text-pulsate text-primary text-bold text-underline');
             },
 
             // Simple method to report errors back to the user.
@@ -101,9 +112,16 @@ var App = function(models) {
                 // Update SVG chart to display filtered 'status' values.
                 this.chart.update(
                     models.map(function(d) {
-                        return d.status;
+                        return d[self._data.piechartColumnId];
                     })
                 );
+            },
+
+            setChartColumnId: function(event, columnId) {
+                $('.btn-chart').addClass('text-muted');
+                $(event.target).removeClass('text-muted');
+                this._data.piechartColumnId = columnId;
+                this.filterChange();
             },
 
             // I read the "copy/edit" item as coping an individual model object,
@@ -266,7 +284,7 @@ var App = function(models) {
                     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals
                     html: `
                         <div>Do you wish to delete ${model.name}.</div>
-                        <div class="pulsate-warning-text text-bold">This cannot be undone.</div>
+                        <div class="text-pulsate text-danger text-bold">This cannot be undone.</div>
                     `,
                     showCloseButton: true,
                     showCancelButton: true,
@@ -374,7 +392,7 @@ var App = function(models) {
                                 $popup.find('.compare-status-cell').text(selected.status);
 
                                 // Show if column values match
-                                let class_list = 'pulsate-info-text text-success text-bold';
+                                let class_list = 'text-pulsate text-success text-bold';
                                 (selected.make == model.make) ?
                                     $popup.find('.compare-make-row').addClass(class_list) : $popup.find('.compare-make-row').removeClass(class_list);
 

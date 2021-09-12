@@ -30,7 +30,8 @@ body {
 }
 
 .btn-copy,
-.btn-delete {
+.btn-delete,
+.btn-chart {
     cursor: pointer;
 }
 
@@ -51,14 +52,14 @@ body {
 }
 
 /* Here are some simple CSS3 Animations */
-.pulsate-warning-text {
-    -webkit-animation: pulsate 1s cubic-bezier(0.24, 0, 0.38, 1);
+.text-pulsate {
+    -webkit-animation: text-pulsate 1s cubic-bezier(0.24, 0, 0.38, 1);
     -webkit-animation-iteration-count: infinite;
-    animation: pulsate-warning-text 1s cubic-bezier(0.24, 0, 0.38, 1) infinite;
+    animation: text-pulsate 1s cubic-bezier(0.24, 0, 0.38, 1) infinite;
     opacity: 0.5;
 }
 
-@-webkit-keyframes pulsate-warning-text {
+@-webkit-keyframes text-pulsate {
     0% {
         opacity: 0.5;
         color: black;
@@ -73,40 +74,22 @@ body {
     }
 }
 
-.pulsate-info-text {
-    -webkit-animation: pulsate 1s cubic-bezier(0.24, 0, 0.38, 1);
-    -webkit-animation-iteration-count: infinite;
-    animation: pulsate-warning-text 1s cubic-bezier(0.24, 0, 0.38, 1) infinite;
-    opacity: 0.5;
-}
-
-@-webkit-keyframes pulsate-warning-text {
-    0% {
-        opacity: 0.5;
-        color: black;
-    }
-    50% {
-        opacity: 1.0;
-        color: darkblue;
-    }
-    100% {
-        opacity: 0.5;
-        color: black;
-    }
-}
-
-
 /* SVG Chart styling */
 svg {
     width: 100%;
     height: 16em;
 }
 
-path.slice{
+path.slice {
+    cursor: pointer;
     stroke-width:2px;
 }
 
-polyline{
+path.slice:hover {
+    opacity: 0.85;
+}
+
+polyline {
     opacity: .3;
     stroke: black;
     stroke-width: 2px;

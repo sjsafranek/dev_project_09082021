@@ -13,7 +13,10 @@
 
 */
 
-var PieChart = function() {
+var PieChart = function(handlers) {
+    let self = this;
+
+    this.handlers = handlers;
 
     // We can make most of these items 'private' attributes.
     let svg = d3.select("svg#chart")
@@ -86,7 +89,14 @@ var PieChart = function() {
     	slice.enter()
     		.insert("path")
     		.style("fill", function(d) { return color(d.data.label); })
-    		.attr("class", "slice");
+    		.attr("class", "slice")
+            .on('click', function(d) {
+                self.handlers.click && self.handlers.click(d.data.label);
+            })
+            .on('contextmenu', function(d) {
+                d3.event.preventDefault();
+                self.handlers.contextmenu && self.handlers.contextmenu(d.data.label);
+            });
 
     	slice.transition().duration(1000)
     		.attrTween("d", function(d) {
@@ -164,6 +174,13 @@ var PieChart = function() {
     		});
 
     	polyline.exit().remove();
+
+        return self;
     };
+
+    this.on = function(handlers) {
+        self.handlers = handlers;
+        return self;
+    }
 
 }
