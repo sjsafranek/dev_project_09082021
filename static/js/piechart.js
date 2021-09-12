@@ -99,6 +99,7 @@ var PieChart = function(handlers) {
             });
 
     	slice.transition().duration(1000)
+            .style("fill", function(d) { return color(d.data.label); })     // Update color if column is changed
     		.attrTween("d", function(d) {
     			this._current = this._current || d;
     			var interpolate = d3.interpolate(this._current, d);
