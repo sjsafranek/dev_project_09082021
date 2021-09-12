@@ -98,10 +98,12 @@ class Controller(BaseHTTPRequestHandler):
         }, kwargs.get('status', 200))
 
     def sendStaticFile(self, fpath):
-        with open(fpath, 'rb') as fh:
-            content = fh.read()
-            contentType = getMimeTypeFromFile(fpath)[0]
-            return self.send(content, content_type=contentType)
+        if os.path.exists(fpath):
+            with open(fpath, 'rb') as fh:
+                content = fh.read()
+                contentType = getMimeTypeFromFile(fpath)[0]
+                return self.send(content, content_type=contentType)
+        self.errorNotFound()
 
     # This section contains methods to help get/collect parameters
     # sent in the HTTP request.

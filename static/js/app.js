@@ -311,6 +311,8 @@ var App = function(models) {
             },
 
             // Bonus!!! Bonus!!! Bonus!!!
+            // I choose to use Swal instead of a traditional modal
+            // to make the popups match.
             compareModel: function(model) {
                 let self = this;
                 return Swal.fire({
