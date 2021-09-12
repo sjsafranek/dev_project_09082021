@@ -63,7 +63,7 @@ The instructions 'technically' didn't say I needed to create two separate pages.
 in a single page and used [D3](https://d3js.org/) to generate and pie chart to show an the status
 values "at a glance" described in Requirement-1. I felt this would be appropriate because of the
 search/filter functionality for Requirement-2. By tying these features together, it allowed the UI
-to provide feed back to the user on the items being viewed as filters are applied.
+to provide feed back to the user as filters are applied.
 
 
 
