@@ -87,6 +87,7 @@ $ python3 main.py -host 0.0.0.0 -port 8888
 Starting server at http://0.0.0.0:8888
 ```
 
+
 ## Issues
 
 1. When running on Windows (within cmd.exe), the program will sometimes not respond to the first

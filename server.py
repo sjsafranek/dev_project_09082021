@@ -35,6 +35,9 @@ VERSION = '0.0.1'
 START_TIME = time.time()
 
 
+# TODO: load templates up on start up.
+
+
 # Basic server for handling requests
 class Controller(BaseHTTPRequestHandler):
 
@@ -221,17 +224,26 @@ class Controller(BaseHTTPRequestHandler):
             up_time=time.time() - START_TIME
         )
 
-    # This is a more traditional View for MVC.
-    def modelHandler(self):
+    # This is a more traditional "View" for MVC.
+    def modelHandler(self, message=''):
         model = self.getModel()
         if model:
             fpath = os.path.join('tmpl', 'model.html')
             with open(fpath) as fh:
                 tmpl = fh.read()
-                page = tmpl.format(**model.toDict())
+                page = tmpl.format(**model.toDict(), message=message)
                 return self.sendHTML(page)
         self.errorNotFound()
 
+    def updateModel(self):
+        model = self.getModel()
+        if model:
+            params = self.params
+            model.color = params.get('color', model.color)
+            model.make = params.get('make', model.make)
+            model.status = params.get('status', model.status)
+            model.save()
+        return model
 
     def do_HEAD(self):
         return
@@ -261,15 +273,8 @@ class Controller(BaseHTTPRequestHandler):
 
         # I did not realize PUT was not allowed in forms...
         elif re.match(r'^/model/[^/]+$', url.path):
-            # return self.do_PUT()
-            model = self.getModel()
-            if model:
-                params = self.params
-                model.color = params.get('color', model.color)
-                model.make = params.get('make', model.make)
-                model.status = params.get('status', model.status)
-                model.save()
-                return self.modelHandler()
+            if self.updateModel():
+                return self.modelHandler(message='Model updated')
 
         self.errorNotFound()
 
@@ -320,21 +325,13 @@ class Controller(BaseHTTPRequestHandler):
             return self.indexHandler()
 
         elif _isApiRequest or re.match(r'^/model/[^/]+$', url.path):
-            model = self.getModel()
+            model = self.updateModel()
             if model:
-                # Update model with new values. Default to existing value.
-                params = self.params
-                model.color = params.get('color', model.color)
-                model.make = params.get('make', model.make)
-                model.status = params.get('status', model.status)
-                model.save()
-
                 # Depending on endpoint return api response or redirect.
                 if _isApiRequest:
                     return self.sendAPIResponse(model=model.toDict())
                 else:
-                    # return self.redirect('/')
-                    self.modelHandler()
+                    self.modelHandler(message='Model updated')
 
         self.errorNotFound()
 
